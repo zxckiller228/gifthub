@@ -33,7 +33,6 @@ input{font:inherit}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.01em;font-size:18px}
 .logo{width:32px;height:32px;border-radius:10px;background:var(--grad);display:grid;place-items:center;box-shadow:0 6px 18px -4px rgba(91,124,255,.7)}
 .logo svg{width:19px;height:19px}
-.demo{font-size:10px;letter-spacing:.09em;font-weight:800;padding:4px 7px;border-radius:7px;color:var(--warn);background:rgba(255,190,85,.12);border:1px solid rgba(255,190,85,.28)}
 .bpill{display:flex;align-items:center;gap:8px;padding:7px 13px 7px 8px;border-radius:999px;background:var(--s2);border:1px solid var(--line);transition:transform .2s,background .2s}
 .bpill:active{transform:scale(.96);background:var(--s3)}
 .coin{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4fc3ff,#1d6fe0);display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
@@ -300,7 +299,7 @@ button.row{transition:background .2s}button.row:active{background:var(--s2)}
 <body>
 <div class="app">
   <header class="hdr">
-    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="2.5"/><path d="M12 9v12M3 14h18M12 9c-2.2-5-7-3.6-5.2 0M12 9c2.2-5 7-3.6 5.2 0"/></svg></div>GiftHub<span class="demo">ДЕМО</span></div>
+    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="2.5"/><path d="M12 9v12M3 14h18M12 9c-2.2-5-7-3.6-5.2 0M12 9c2.2-5 7-3.6 5.2 0"/></svg></div>GiftHub</div>
     <button class="bpill" data-a="tab" data-v="wallet" aria-label="Баланс"><i class="coin">T</i><b class="num"><span id="hb" data-v="0">0,00</span> <span id="hcur" class="muted" style="font-weight:700;font-size:12px">TON</span></b></button>
   </header>
   <main class="view" id="view"></main>
@@ -376,17 +375,17 @@ const COL = Object.fromEntries(COLS.map(c => [c.key, c]));
 /* Подарки, прочитанные с экрана и сверенные с публичными страницами t.me/nft/…
    rub — оценка Telegram («Ценность»), price — примерная цена в TON для маркета, left — «Количество» */
 const GIFTS = [
-  { id: 'g1', col: 'flame', num: 115116, model: 'Druid Flame', mr: 3, pat: 'Star', pr: 0.4, bd: 'Grape', br: 1.5, left: 448315, rub: 821, price: 6.9, seller: 'user_4172', slug: 'ChillFlame-115116',
+  { id: 'g1', col: 'flame', num: 115116, model: 'Druid Flame', mr: 3, pat: 'Star', pr: 0.4, bd: 'Grape', br: 1.5, left: 448315, rub: 821, price: 6.9, seller: 'GiftHub', slug: 'ChillFlame-115116',
     img: 'https://cdn4.telesco.pe/file/GlxZnP-CmPCQmj23iYYQNDPcHOjjbJ1vnJpZbBI09N0jZOOcclYiZ2uToh7oGI8tiDgHKnbYU23PHYsURZsl0CkQc-UwGnYCFyqoOW0TMhd0CswoVXLiVmgrlkNvN-THitkvaW8EGQ7l2p2nyqlyLp4kMn37KTp5qoJxPG8Wi4_H1oLEjEttdbDRH640AzMJWSrOmO_MHFP5QQyBggJDN_6wxeJbIoXpFYOX3R8dDSqYKMkEdI9VtBHOZWWYDdasgt2qVNk5qwDettcviss9xhgbp6Qp1rq1Du-Klj9NW8wjjkneKVsBr-XuuOJ_Ppcs5RaF7bFVNzIGnIgf3Sibcg.jpg' },
-  { id: 'g2', col: 'figure', num: 233591, model: 'Carrara', mr: 3, pat: 'Lily', pr: 0.5, bd: 'Midnight Blue', br: 1.2, left: 268851, rub: 3206, price: 26.5, seller: 'user_8820', slug: 'LibertyFigure-233591',
+  { id: 'g2', col: 'figure', num: 233591, model: 'Carrara', mr: 3, pat: 'Lily', pr: 0.5, bd: 'Midnight Blue', br: 1.2, left: 268851, rub: 3206, price: 26.5, seller: 'GiftHub', slug: 'LibertyFigure-233591',
     img: 'https://cdn4.telesco.pe/file/W3lWTw8I6uIOXy0KndWZH4qe5JngcboSySfMfPSn-iAYZwW18Y44YY9ECXNANepVcNCVt1QKjUP2xiGn4PFpbhuOc1ijk1yRFPv3chvRwkkH_WpQCatcgdVImBbI2ArMNgZn3NYs27bS7me5-lxPv3zN2wEQelPU7eHwZdPv0dB-mGOstj2ZDjw5pG5SW09Z8IdNS4T3jGCwhi-VVJBd30s-SoRsCa0UkzaiElp-MancTtfWgGaG9P8DUYeWKiugRIiUSLm3IupFi0S6AGJDKNakLaN-MFoiyz_ipT4bljQHU0vuXU-QTLd_cjNAlBilQidaKE69mtYeZafyPLE0eA.jpg' },
-  { id: 'g3', col: 'heart', num: 78622, model: 'Baking Hot', mr: 0.5, pat: 'Cobra', pr: 0.2, bd: 'Roman Silver', br: 1.5, left: 200676, rub: 1192, price: 10.4, seller: 'user_2951', slug: 'CookieHeart-78622',
+  { id: 'g3', col: 'heart', num: 78622, model: 'Baking Hot', mr: 0.5, pat: 'Cobra', pr: 0.2, bd: 'Roman Silver', br: 1.5, left: 200676, rub: 1192, price: 10.4, seller: 'GiftHub', slug: 'CookieHeart-78622',
     img: 'https://cdn4.telesco.pe/file/kWdqgow03loxsf5jjRydUhMNRmk6YDajACAgvYLmv0PKLV1JQfWMJQ7wk_O2LdC9oO4YOl0-4RlDR3s-LzoGS-hHNRObkv0A8a9ptH_A-NFtr8j63J5efFiXUULLORlHsh4KC9XdWNkexJhlDIu2H1Oa5dHf9Q8cVXx-BBSWYIdTYnFLUtw9Kl6vHPeiME979RtDdPKqsnaP_hpeukWnFd6ZIOmGPcrjlZVRYk-Az7-OzT6WYC_CVGdR91ksJmXzlaK9pvVjvSXPk37531o8x_nX6PtAOCjlbD1ImA4kuGPYDjtZHMqxwnAAwwXUnn8BgdtJvzDrC2-cxDCIiduuGA.jpg' },
-  { id: 'g4', col: 'ginger', num: 150351, model: 'Pink Molasses', mr: 1.2, pat: 'Star', pr: 1.8, bd: 'Desert Sand', br: 1, left: 152005, rub: 955, price: 7.9, seller: 'user_6034', slug: 'GingerCookie-150351',
+  { id: 'g4', col: 'ginger', num: 150351, model: 'Pink Molasses', mr: 1.2, pat: 'Star', pr: 1.8, bd: 'Desert Sand', br: 1, left: 152005, rub: 955, price: 7.9, seller: 'GiftHub', slug: 'GingerCookie-150351',
     img: 'https://cdn4.telesco.pe/file/WaumRFFutP5QsRdE8WiDLV0-3zzrynJU2jSlKTWwJ2wqJlT-_IIqWp4UMndb270sGHCu4d4EhJzSjw5TxIKguStcSlpaodbJsXlzpF0TeVDrOmYGCn_pIguyuiwG9Hceuzsk-xKfhOL4PO1tQf-sPcQYeGhUcYFjDNJvG6ZQIVUlpD4VNMglrEUuLlQ0KerJvbtXSiXKHkUOdkvKTmEwy9X-wfOZBXoRGCiYh72YuirDBwdeZsnfKW3322Tededtr1XSNBEssAoIw8QbUt656j6enCkBE9Dr-83o_35aoUB5IGmRa7ftUAjMkUsrTqR6fhXaSKBwJ1h_vZ6aJLLOow.jpg' },
-  { id: 'g5', col: 'ginger', num: 35824, model: 'Mr. Biscuit', mr: 1.7, pat: 'Shield', pr: 0.4, bd: 'Orange', br: 1.5, left: 152005, rub: 955, price: 9.2, seller: 'user_7713', slug: 'GingerCookie-35824',
+  { id: 'g5', col: 'ginger', num: 35824, model: 'Mr. Biscuit', mr: 1.7, pat: 'Shield', pr: 0.4, bd: 'Orange', br: 1.5, left: 152005, rub: 955, price: 9.2, seller: 'GiftHub', slug: 'GingerCookie-35824',
     img: 'https://cdn5.telesco.pe/file/b-vCahuXlsCOLA5tR14YHVWBYSi_0u9RsEZDqVOpUbiYgTsQb6i0hvnqRlbxeu-tiaeNQzUeEwvRmhO0rh6ZalLp5cqAzSTO6Ipl2FjblEOKYPsOdMsOwO9_yIwfX1qrF37aE2qUgDbavbXER-5XpLJbCBsDqN2W_5x0ZFGCk3uwTCbfbJ7mGLCQXMEKmvweiMhGxGdpJ7WVvvsEtYyK15OFQfP49pRclzBouxiHerLUD-Cm156cbvl4L9yuYLiPB-XPQm56gv-AKTki38cDumbUtYFd9ONyLrTn-mUOLXJ8f_fGypFJoLpy3xiHPMC295QWI13jt0_H99NRdd0QHg.jpg' },
-  { id: 'g6', col: 'cigar', num: 12316, model: 'Green Goblin', mr: 2, pat: 'Oak Leaf', pr: 0.2, bd: 'Copper', br: 1.5, left: 26849, rub: 5250, price: 44.5, seller: 'user_1307', slug: 'VintageCigar-12316',
+  { id: 'g6', col: 'cigar', num: 12316, model: 'Green Goblin', mr: 2, pat: 'Oak Leaf', pr: 0.2, bd: 'Copper', br: 1.5, left: 26849, rub: 5250, price: 44.5, seller: 'GiftHub', slug: 'VintageCigar-12316',
     img: 'https://cdn4.telesco.pe/file/C0Z8RjcBWgHPn1CBOL5w7OBnOcaaTRF4xceX6y3V9Ge3yMhpOJxlBE5Z4pmxSR1-CPqjpDyQYaZze4_b9OAQJGhpBmisYNc4-UWDCexBzCro2PiXMGTaXHXyezhYEI3EMV4YEdWy_5ZOaAyZdyrUsvbhG8eOpNGTFVBI6BT8NC1DNQBBow6FaUOxSCxKm794SHcSjh1OjmVeCxfU2muJ2xHZ_kf7yJna6isFhdTz_bw34tgWrPhx1gi0lUmFpLci5BTUl0kQ4Cp2FhlmnEcmT7Xvgx61MR78RPF4Y4K6GZEahNer0imDmwJRXG1GBQFBx5l5njSUVCykkhiOoxW3aw.jpg' }
 ];
 const itemValue = it => +(it.rub / RUB_PER_TON).toFixed(2); // оценка Telegram в TON
@@ -401,7 +400,7 @@ function giftArt(it, { float = false } = {}) {
   return `<div class="gart${float ? ' float' : ''}" style="--b1:${bd.c[0]};--b2:${bd.c[1]}">${pat}<svg class="fig" viewBox="0 0 100 100" aria-hidden="true">${DRAW[COL[it.col].draw](PAL[it.model] || PAL['Druid Flame'])}</svg>${photo}</div>`;
 }
 
-/* ---------- Демо-история цен коллекций (не настоящая) ---------- */
+/* ---------- Служебные расчёты по ценам коллекций ---------- */
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const HIST = {};
 COLS.forEach((c, i) => {
@@ -418,7 +417,7 @@ function colStats(key) {
 
 /* ============ Настройки: замените на свои значения ============ */
 const CFG = {
-  demo: true,                          // true — показывать метку «ДЕМО»
+  demo: false,                         // true — показывать метку «ДЕМО» и пометки о тестовых данных
   rubPerTon: RUB_PER_TON,              // курс для показа цен в рублях (примерный, обновите)
   fee: 0.05,                           // комиссия сервиса с продажи
   instantRate: 0.92,                   // выкуп «сразу» = оценка × это число
@@ -443,13 +442,13 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const fmt = n => Number(n).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const parse = v => parseFloat(String(v).replace(',', '.').replace(/[^0-9.]/g, ''));
-const S = { tab: 'home', balance: 245.8, rub: false, hap: true, market: { q: '', col: 'all', sort: 'new' }, inv: 'all', wf: 'all', items: [], lots: [], deals: [], history: [], shown: 0, seq: 100 };
+const S = { tab: 'home', balance: 0, rub: false, hap: true, market: { q: '', col: 'all', sort: 'new' }, inv: 'all', wf: 'all', items: [], lots: [], deals: [], history: [], shown: 0, seq: 100 };
 const rub = n => Math.round(n * CFG.rubPerTon).toLocaleString('ru-RU') + ' ₽';
 const P = n => S.rub ? rub(n) : fmt(n) + ' TON';
 const Pn = n => S.rub ? rub(n) : fmt(n);
 const nm = it => COL[it.col].name;
 const rareScore = it => -(Math.log(it.mr / 100) + Math.log(it.br / 100) + Math.log(it.pr / 100));
-const chgHtml = c => `<span class="chg ${c >= 0 ? 'up' : 'down'}">${c >= 0 ? '▲' : '▼'} ${Math.abs(c * 100).toFixed(1)}%</span>`;
+const chgHtml = c => !CFG.demo ? '' : `<span class="chg ${c >= 0 ? 'up' : 'down'}">${c >= 0 ? '▲' : '▼'} ${Math.abs(c * 100).toFixed(1)}%</span>`;
 
 function countTo(el, from, to, ms = 900, usdEl) {
   const t0 = performance.now();
@@ -464,14 +463,11 @@ function countTo(el, from, to, ms = 900, usdEl) {
 let toastT;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400); }
 
-/* ============ Демо-данные ============ */
+/* ============ Начальные данные ============ */
 (function seed() {
   S.lots = GIFTS.map(g => Object.assign({}, g));
   S.items = []; S.deals = [];
-  S.history = [
-    { k: 'deposit', t: 'Пополнение', s: '3 дня назад', a: 100 }, { k: 'sell', t: 'Продажа · Cookie Heart', s: 'Вчера', a: 61.2 },
-    { k: 'buy', t: 'Покупка · Ginger Cookie', s: '5 дней назад', a: -28 }, { k: 'withdraw', t: 'Вывод на кошелёк', s: '6 дней назад', a: -40 }
-  ];
+  S.history = [];
 })();
 
 const allLots = () => S.lots.concat(S.items.filter(i => i.listed).map(i => Object.assign({}, i, { price: i.listed, mine: true, seller: 'вы' })));
@@ -483,6 +479,7 @@ const lotCard = (l, i = 0) => `<button class="lot" data-a="lot" data-id="${l.id}
   <div class="lot-n">${nm(l)}</div><div class="lot-s">#${l.num} · ${l.model}</div>
   <div class="lot-p">${S.rub ? '' : '<i class="coin">T</i>'}${Pn(l.price)}</div></button>`;
 const spark = (arr, up) => {
+  if (!CFG.demo) return '';
   const mn = Math.min(...arr), mx = Math.max(...arr), sp = (mx - mn) || 1, id = uid();
   const pts = arr.map((v, i) => [i / (arr.length - 1) * 100, 28 - (v - mn) / sp * 24]);
   const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
@@ -518,7 +515,7 @@ function viewHome() {
     <button data-a="swap"><div class="ic c2"><svg viewBox="0 0 24 24">${IC.swap}</svg></div>Обмен</button>
     <button data-a="withdraw"><div class="ic c3"><svg viewBox="0 0 24 24">${IC.wd}</svg></div>Вывод</button>
     <button data-a="support"><div class="ic c4"><svg viewBox="0 0 24 24">${IC.sup}</svg></div>Поддержка</button></div>
-  <section class="sec"><div class="sec-h"><h3>Рынок сегодня</h3><span>${CFG.demo ? 'демо-данные' : 'за 24 ч'}</span></div><div class="hscroll">${trend.map(ccard).join('')}</div></section>
+  <section class="sec"><div class="sec-h"><h3>Рынок сегодня</h3><span>${CFG.demo ? 'демо-данные' : 'минимальные цены'}</span></div><div class="hscroll">${trend.map(ccard).join('')}</div></section>
   <section class="sec"><div class="sec-h"><h3>Новые лоты</h3><button data-a="tab" data-v="market">Все лоты</button></div><div class="lots">${S.lots.slice(0, 4).map(lotCard).join('')}</div></section>
   <section class="sec"><div class="sec-h"><h3>Мои сделки</h3><span>${S.deals.length ? S.deals.length + ' шт.' : ''}</span></div>${dealsHtml()}</section>`;
 }
@@ -533,7 +530,7 @@ function marketList() {
 }
 function lotsGridHtml() {
   const list = marketList();
-  const cs = S.market.col !== 'all' ? `<button class="btn ghost sm" style="margin-bottom:12px" data-a="col" data-v="${S.market.col}">📈 График и статистика коллекции</button>` : '';
+  const cs = S.market.col !== 'all' ? `<button class="btn ghost sm" style="margin-bottom:12px" data-a="col" data-v="${S.market.col}">${CFG.demo ? '📈 График и статистика коллекции' : 'О коллекции'}</button>` : '';
   return cs + (list.length ? `<div class="lots">${list.map(lotCard).join('')}</div>` : `<div class="empty"><b>🔍</b>Ничего не найдено. Измените запрос или фильтр.</div>`);
 }
 function viewMarket() {
@@ -718,11 +715,13 @@ function colSheet(key) {
   setBody(`<div class="st"><div style="display:flex;gap:14px;align-items:center;margin-top:4px"><div style="width:74px;flex:0 0 74px">${giftArt(colRep(key), { float: true })}</div>
     <div><h2 style="margin:0">${c.name}</h2><div class="sub" style="margin:2px 0 0">Выпущено ${c.issued.toLocaleString('ru-RU')} · ${CFG.demo ? 'демо-цены' : 'цена коллекции'}</div></div></div>
     <div class="pricebox"><div><div class="pu">Минимальная цена (floor)</div><div class="pv num">${P(s.floor)}</div></div>${chgHtml(s.change)}</div>
-    <div id="ch"></div>
+    ${CFG.demo ? `<div id="ch"></div>
     <div class="stats"><div><span>Макс. за 24 ч</span><b class="num">${P(s.hi)}</b></div><div><span>Мин. за 24 ч</span><b class="num">${P(s.lo)}</b></div>
-    <div><span>Лотов в продаже</span><b>${cnt}</b></div><div><span>Заявки на покупку</span><b class="num">до ${P(s.floor * .93)}</b></div></div>
+    <div><span>Лотов в продаже</span><b>${cnt}</b></div><div><span>Заявки на покупку</span><b class="num">до ${P(s.floor * .93)}</b></div></div>`
+    : `<div class="stats"><div><span>Лотов в продаже</span><b>${cnt}</b></div><div><span>Выпущено</span><b>${c.issued.toLocaleString('ru-RU')}</b></div></div>
+    <div class="empty" style="margin-top:12px"><b>📈</b>История цен появится после первых сделок на платформе.</div>`}
     <button class="btn primary" id="go">Смотреть лоты</button></div>`);
-  mountChart($('#ch'), key); openSheet();
+  if (CFG.demo) mountChart($('#ch'), key); openSheet();
   $('#go').onclick = () => { S.market.col = key; closeSheet(); go('market'); };
 }
 function lotSheet(it, ctx) {
@@ -738,7 +737,7 @@ function lotSheet(it, ctx) {
       <div style="text-align:right"><div class="pu">Floor коллекции</div><div class="num" style="font-weight:700">${P(st.floor)} ${chgHtml(st.change)}</div></div></div>
     ${attrsHtml(it)}${act}
     ${it.slug ? '<button class="btn ghost" id="tgb" style="margin-top:10px">Открыть в Telegram</button>' : ''}
-    <button class="btn ghost" id="colb" style="margin-top:10px">📈 График коллекции</button></div>`);
+    <button class="btn ghost" id="colb" style="margin-top:10px">${CFG.demo ? '📈 График коллекции' : 'О коллекции'}</button></div>`);
   openSheet();
   $('#colb').onclick = () => colSheet(it.col);
   if ($('#tgb')) $('#tgb').onclick = () => { const u = 'https://t.me/nft/' + it.slug; try { tg && tg.openTelegramLink ? tg.openTelegramLink(u) : window.open(u, '_blank'); } catch (e) {} };
@@ -864,6 +863,7 @@ function swapFlow(preLot, preItem) {
 
 /* ============ Кошелёк: пополнение и вывод ============ */
 function depositSheet() {
+  if (/ВСТАВЬТЕ/.test(CFG.depositAddress)) { setBody(`<div class="st"><h2>Пополнение</h2><p class="sub">Приём платежей пока не подключён. Пополнение баланса станет доступно позже.</p><button class="btn primary" id="go">Понятно</button></div>`); openSheet(); $('#go').onclick = closeSheet; return; }
   setBody(`<div class="st"><h2>Пополнение</h2><p class="sub">Отправьте TON на адрес сервиса. Баланс обновится после подтверждения сети.</p>
     <ol class="steps"><li>Скопируйте адрес<br><button class="copy" id="ca">${CFG.depositAddress} <span>⧉</span></button></li>
     ${CFG.depositMemo ? `<li>Укажите комментарий<br><button class="copy" id="cm">${CFG.depositMemo} <span>⧉</span></button></li>` : ''}
@@ -901,9 +901,9 @@ function supportSheet() {
     ['Когда придут деньги?', 'Деньги за продажу зачисляются на баланс сразу после покупки вашего лота. Вывод обрабатывается в порядке очереди.'],
     ['Подарок не нашли, что делать?', 'Напишите в поддержку и приложите скриншот передачи подарка. Мы разберёмся вручную.']];
   setBody(`<div class="st"><h2>Поддержка</h2><p class="sub">Частые вопросы. Если ответа нет, напишите оператору.</p>${faq.map(([q, a]) => `<div class="faq"><button>${q}<span>＋</span></button><p>${a}</p></div>`).join('')}
-    <button class="btn primary" id="wr">Написать в поддержку</button></div>`);
+    ${/your_/.test(CFG.support) ? '' : '<button class="btn primary" id="wr">Написать в поддержку</button>'}</div>`);
   openSheet(); $$('.faq button', body).forEach(b => b.onclick = () => { b.parentElement.classList.toggle('open'); hap(); });
-  $('#wr').onclick = () => { try { tg && tg.openTelegramLink ? tg.openTelegramLink(CFG.support) : window.open(CFG.support, '_blank'); } catch (e) {} };
+  if ($('#wr')) $('#wr').onclick = () => { try { tg && tg.openTelegramLink ? tg.openTelegramLink(CFG.support) : window.open(CFG.support, '_blank'); } catch (e) {} };
 }
 function rulesSheet() {
   setBody(`<div class="st"><h2>Правила и безопасность</h2><p class="sub">Несколько простых правил защищают ваши подарки и деньги.</p>
@@ -915,7 +915,7 @@ function rulesSheet() {
 function aboutSheet() {
   setBody(`<div class="st"><h2>О сервисе</h2><p class="sub">GiftHub — маркет и обмен коллекционных подарков.</p>
     <div class="rows"><div><span>Версия</span><b>1.0 ${CFG.demo ? '(демо)' : ''}</b></div><div><span>Комиссия продажи</span><b>${Math.round(CFG.fee * 100)}%</b></div><div><span>Сеть</span><b>TON</b></div></div>
-    <div class="warn" style="margin-top:12px"><span>ℹ️</span><span>Сервис независимый: он не связан с Telegram и не одобрен Telegram. Названия и картинки подарков в демо-версии оригинальные.${CFG.demo ? ' Цены, лоты и графики в демо-версии не настоящие.' : ''}</span></div>
+    <div class="warn" style="margin-top:12px"><span>ℹ️</span><span>Сервис независимый: он не связан с Telegram и не одобрен Telegram. Изображения подарков загружаются с серверов Telegram.${CFG.demo ? ' Цены, лоты и графики в демо-версии не настоящие.' : ''}</span></div>
     <button class="btn ghost" id="ok">Закрыть</button></div>`);
   openSheet(); $('#ok').onclick = closeSheet;
 }
@@ -932,7 +932,6 @@ const A = {
 document.addEventListener('click', e => { const t = e.target.closest('[data-a]'); if (!t || !A[t.dataset.a]) return; hap('light'); A[t.dataset.a](t.dataset, t); });
 
 /* ============ Запуск ============ */
-if (!CFG.demo) $$('.demo').forEach(x => x.style.display = 'none');
 render();
 const sp = tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param;
 if (sp && /^lot_/.test(sp)) { const l = findLot(sp.slice(4)); if (l) setTimeout(() => lotSheet(l, 'market'), 400); }
