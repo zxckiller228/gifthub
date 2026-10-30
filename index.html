@@ -422,7 +422,7 @@ const CFG = {
   fee: 0.05,                           // комиссия сервиса с продажи
   instantRate: 0.92,                   // выкуп «сразу» = оценка × это число
   minWithdraw: 1, netFee: 0.05,        // вывод: минимум и сетевая комиссия, TON
-  escrow: '@your_escrow_account',      // аккаунт, на который передаётся подарок
+  escrow: '',                          // @username бота, которому передают подарки (впишите позже, например '@my_gift_bot')
   support: 'https://t.me/your_support_bot',
   depositAddress: 'UQ_ВСТАВЬТЕ_АДРЕС_КОШЕЛЬКА_СЕРВИСА',
   depositMemo: ''                      // комментарий к пополнению (если нужен)
@@ -551,7 +551,7 @@ function viewInv() {
     ${[['all', 'Все'], ['profile', 'В профиле'], ['vault', 'Платформа'], ['sale', 'Продажа']].map(([k, v]) => `<button class="${f === k ? 'on' : ''}" data-a="invf" data-v="${k}">${v}</button>`).join('')}</div>
   ${list.length ? `<div class="lots">${list.map((it, i) => `<button class="lot" data-a="item" data-id="${it.id}" style="animation-delay:${i * 40}ms">${giftArt(it)}${whereTag(it)}
     <div class="lot-n">${nm(it)}</div><div class="lot-s">#${it.num} · ${it.model}</div><div class="lot-p" style="font-weight:700;font-size:13.5px"><span class="muted" style="font-weight:600">≈</span>${P(itemValue(it))}</div></button>`).join('')}</div>`
-    : `<div class="empty"><b>🎁</b>${S.items.length ? 'В этой категории пока пусто.' : 'У вас пока нет подарков.<br>Купите подарок на маркете, и он появится здесь.'}</div>`}
+    : `<div class="empty"><b>🎁</b>${S.items.length ? 'В этой категории пока пусто.' : 'У вас пока нет подарков.<br>Передайте подарок боту, и он появится здесь.'}</div>`}
   <div class="twoc"><button class="btn ghost sm" data-a="sell">Продать подарок</button><button class="btn ghost sm" data-a="swap">Обменять</button></div>`;
 }
 const HK = { deposit: ['⬆️', 'Пополнения'], withdraw: ['⬇️', 'Выводы'], buy: ['🛒', 'Покупки'], sell: ['💰', 'Продажи'], swap: ['🔁', 'Обмены'] };
@@ -779,7 +779,25 @@ function buyFlow(l) {
 }
 
 /* ============ Продажа ============ */
+// Нет подарков в приложении: объясняем, как их добавить
+const escrowName = () => (CFG.escrow && !/your_/.test(CFG.escrow)) ? CFG.escrow : '';
+function noGiftSheet(kind) {
+  const bot = escrowName(), verb = kind === 'swap' ? 'обменять' : 'продать', verb2 = kind === 'swap' ? 'обменять' : 'выставить на продажу';
+  setBody(`<div class="st"><h2>У вас пока нет подарков</h2>
+    <p class="sub">Чтобы ${verb} подарок, его нужно передать боту${bot ? '' : ' (имя бота скоро появится здесь)'}. После проверки подарок появится в разделе «Мои подарки», и его можно будет ${verb2}.</p>
+    <ol class="steps"><li>Откройте чат с ботом${bot ? '<br><button class="copy" id="copy">' + bot + ' <span>⧉</span></button>' : ''}</li>
+    <li>Отправьте ему подарок через меню подарков в Telegram</li>
+    <li>Вернитесь сюда: подарок появится в «Мои подарки»</li></ol>
+    <div class="warn"><span>⚠️</span><span>Передавайте подарки только боту, имя которого указано в приложении. Никому не сообщайте коды из Telegram и пароли.</span></div>
+    ${bot ? '<button class="btn ghost" id="open">Открыть чат</button>' : ''}<button class="btn primary" id="ok">Понятно</button></div>`);
+  $('#ok').onclick = closeSheet;
+  if (bot) {
+    $('#copy').onclick = () => { try { navigator.clipboard && navigator.clipboard.writeText(bot); } catch (e) {} hap('medium'); toast('Имя бота скопировано'); };
+    $('#open').onclick = () => { const u = 'https://t.me/' + bot.replace('@', ''); try { tg && tg.openTelegramLink ? tg.openTelegramLink(u) : window.open(u, '_blank'); } catch (e) {} };
+  }
+}
 function sellFlow(pre) {
+  if (!pre && !S.items.length) { noGiftSheet('sell'); openSheet(); return; }
   const st = { it: pre || null, price: 0 };
   const pick = () => {
     const list = freeItems();
@@ -806,6 +824,7 @@ function sellFlow(pre) {
 
 /* ============ Обмен ============ */
 function swapFlow(preLot, preItem) {
+  if (!preItem && !S.items.length) { noGiftSheet('swap'); openSheet(); return; }
   const st = { it: preItem || null, mode: preLot ? 'gift' : 'gift', want: preLot || null };
   const pick = () => {
     const list = freeItems();
@@ -896,7 +915,7 @@ function withdrawSheet() {
 
 /* ============ Поддержка, правила, о сервисе ============ */
 function supportSheet() {
-  const faq = [['Как продать подарок?', 'Нажмите «Продажа», выберите подарок и цену. Если подарок в вашем профиле Telegram, его нужно передать на аккаунт сервиса. После проверки лот появится на маркете.'],
+  const faq = [['Как продать подарок?', 'Нажмите «Продажа». Если подарков в приложении ещё нет, передайте подарок боту сервиса: после проверки он появится в «Мои подарки», и вы сможете выбрать цену и выставить его на маркет.'],
     ['Сколько стоит сделка?', `Комиссия с продажи — ${Math.round(CFG.fee * 100)}%. Она показывается заранее, до подтверждения. Мгновенный выкуп считается как ${Math.round(CFG.instantRate * 100)}% оценки.`],
     ['Когда придут деньги?', 'Деньги за продажу зачисляются на баланс сразу после покупки вашего лота. Вывод обрабатывается в порядке очереди.'],
     ['Подарок не нашли, что делать?', 'Напишите в поддержку и приложите скриншот передачи подарка. Мы разберёмся вручную.']];
