@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#080b12">
+<title>GiftHub — биржа подарков</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#080b12;--s1:#0e1320;--s2:#141a2a;--s3:#1b2236;--line:rgba(255,255,255,.075);--line2:rgba(255,255,255,.14);
+  --text:#eef1f8;--muted:#8d96b0;--dim:#5f6885;
+  --acc:#5b7cff;--acc2:#8a5cff;--cyan:#3ed8e8;--up:#2fd19a;--down:#ff6178;--warn:#ffbe55;
+  --grad:linear-gradient(135deg,#5b7cff,#8a5cff);
+  --r:18px;
+}
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);overscroll-behavior:none;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Inter,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden;background:
+  radial-gradient(900px 380px at 50% -140px,rgba(91,124,255,.22),transparent 70%),
+  radial-gradient(500px 300px at 100% 30%,rgba(138,92,255,.09),transparent 70%),var(--bg)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{font:inherit}
+.num{font-variant-numeric:tabular-nums}
+.app{max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+
+/* ===== шапка ===== */
+.hdr{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:linear-gradient(var(--bg) 62%,transparent)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.01em;font-size:18px}
+.logo{width:32px;height:32px;border-radius:10px;background:var(--grad);display:grid;place-items:center;box-shadow:0 6px 18px -4px rgba(91,124,255,.7)}
+.logo svg{width:19px;height:19px}
+.demo{font-size:10px;letter-spacing:.09em;font-weight:800;padding:4px 7px;border-radius:7px;color:var(--warn);background:rgba(255,190,85,.12);border:1px solid rgba(255,190,85,.28)}
+.bpill{display:flex;align-items:center;gap:8px;padding:7px 13px 7px 8px;border-radius:999px;background:var(--s2);border:1px solid var(--line);transition:transform .2s,background .2s}
+.bpill:active{transform:scale(.96);background:var(--s3)}
+.coin{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4fc3ff,#1d6fe0);display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+.bpill b{font-size:15px}
+
+/* ===== нижняя навигация ===== */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(10,14,24,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--line)}
+.nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:10.5px;font-weight:650;color:var(--dim);transition:color .25s}
+.nav button svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s cubic-bezier(.3,1.6,.4,1)}
+.nav button.on{color:#fff}
+.nav button.on svg{transform:translateY(-2px) scale(1.08);stroke:#9fb2ff}
+.nav button.on::before{content:"";position:absolute;top:-8px;width:26px;height:3px;border-radius:0 0 4px 4px;background:var(--grad);animation:pop .35s}
+
+/* ===== страницы ===== */
+.view{padding:2px 16px 0}
+.page{animation:pageIn .42s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pageIn{from{opacity:0;transform:translateY(12px)}}
+.h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:6px 0 12px}
+.sec{margin-top:24px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 11px}
+.sec-h h3{margin:0;font-size:18px;font-weight:750;letter-spacing:-.01em}
+.sec-h button,.sec-h span{font-size:13px;color:var(--muted)}
+.sec-h button{color:#9fb2ff;font-weight:600}
+.muted{color:var(--muted)}
+
+/* ===== баланс ===== */
+.bal{position:relative;display:block;width:100%;text-align:left;border-radius:26px;padding:22px 22px 20px;overflow:hidden;
+  background:linear-gradient(155deg,#1b2350,#10152b 58%,#0e2230);transition:transform .25s}
+.bal:active{transform:scale(.985)}
+.bal::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.4px;
+  background:conic-gradient(from var(--ang),#5b7cff,#3ed8e8,#8a5cff,#5b7cff);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:spin 8s linear infinite;pointer-events:none}
+@keyframes spin{to{--ang:360deg}}
+.bal .shine{position:absolute;top:-60%;left:-40%;width:45%;height:220%;transform:rotate(18deg);pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);animation:shine 6s ease-in-out infinite}
+@keyframes shine{0%,55%{left:-60%}100%{left:135%}}
+.bal .l{font-size:13px;color:#b9c3ee;display:flex;align-items:center;gap:6px}
+.bal .l svg{width:14px;height:14px;opacity:.7}
+.bal .v{display:flex;align-items:baseline;gap:9px;margin:9px 0 2px}
+.bal .v .n{font-size:44px;font-weight:800;letter-spacing:-.025em;line-height:1.05}
+.bal .v .c{font-size:17px;font-weight:700;color:var(--cyan)}
+.bal .u{font-size:13.5px;color:var(--muted)}
+.chips{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.chip{font-size:12px;padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.08);color:#d3d9f5}
+.chip b{margin-left:5px;color:#fff}
+
+/* ===== быстрые действия ===== */
+.qa{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.qa button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 4px 11px;border-radius:var(--r);background:var(--s1);
+  border:1px solid var(--line);font-size:12.5px;font-weight:650;transition:transform .2s cubic-bezier(.2,.8,.2,1),background .2s}
+.qa button:active{transform:scale(.93);background:var(--s2)}
+.qa .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;box-shadow:0 8px 18px -8px var(--sh);transition:transform .4s cubic-bezier(.3,1.6,.4,1)}
+.qa button:active .ic{transform:rotate(-8deg) scale(1.1)}
+.qa svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.c1{background:linear-gradient(135deg,#ff6a9a,#ff9a5c);--sh:#ff6a9a}
+.c2{background:linear-gradient(135deg,#6a7bff,#a07bff);--sh:#7c6cff}
+.c3{background:linear-gradient(135deg,#1fc8a6,#3ed8e8);--sh:#2dd4c0}
+.c4{background:linear-gradient(135deg,#4c8dff,#7cb6ff);--sh:#4c8dff}
+
+/* ===== подарок (SVG-арт) ===== */
+.gart{position:relative;aspect-ratio:1;border-radius:15px;overflow:hidden;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 30%,var(--b1),var(--b2))}
+.gart .pat{position:absolute;inset:0;width:100%;height:100%;opacity:.2}
+.gart .fig{position:relative;width:74%;height:74%;filter:drop-shadow(0 7px 8px rgba(0,0,0,.4))}
+.gart.float .fig{animation:bob 3.8s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px) rotate(2deg)}}
+.gart::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 40%,rgba(255,255,255,.16) 50%,transparent 60%);
+  transform:translateX(-120%);animation:glint 6s ease-in-out infinite;pointer-events:none}
+@keyframes glint{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+
+/* ===== карточки лотов ===== */
+.lots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lot{position:relative;text-align:left;padding:8px;border-radius:var(--r);background:var(--s1);border:1px solid var(--line);
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .2s;animation:pageIn .5s both}
+.lot:active{transform:scale(.97)}
+.lot:hover{border-color:var(--line2)}
+.lot .gart{border-radius:12px}
+.lot-n{margin:9px 3px 0;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lot-s{margin:1px 3px 0;font-size:12px;color:var(--muted)}
+.lot-p{margin:7px 3px 3px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:6px}
+.lot-p .coin{width:17px;height:17px;font-size:9px}
+.tag{position:absolute;top:14px;left:14px;font-size:10.5px;font-weight:800;padding:4px 8px;border-radius:8px;background:rgba(8,11,18,.7);backdrop-filter:blur(6px);color:#fff}
+.tag.mine{background:var(--grad)}
+.tag.tprof{background:rgba(255,190,85,.9);color:#2a1b00}
+.tag.tvault{background:rgba(47,209,154,.9);color:#032a1d}
+.tag.tsale{background:rgba(91,124,255,.92)}
+
+/* ===== коллекции (тренды) ===== */
+.hscroll{display:flex;gap:12px;overflow-x:auto;margin:0 -16px;padding:2px 16px 8px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding-left:16px}
+.hscroll::-webkit-scrollbar{display:none}
+.ccard{flex:0 0 158px;width:158px;text-align:left;padding:10px;border-radius:var(--r);background:var(--s1);border:1px solid var(--line);scroll-snap-align:start;transition:transform .2s}
+.ccard:active{transform:scale(.96)}
+.ccard .gart{border-radius:12px}
+.ccard .cn{margin:9px 2px 0;font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccard .cf{display:flex;align-items:center;justify-content:space-between;margin:5px 2px 0;font-size:13px}
+.ccard svg.spark{display:block;width:100%;height:30px;margin-top:6px}
+.chg{font-size:12px;font-weight:750;display:inline-flex;align-items:center;gap:3px}
+.chg.up{color:var(--up)}.chg.down{color:var(--down)}
+
+/* ===== поиск, чипы, сегменты ===== */
+.search{position:relative;margin-bottom:12px}
+.search input{width:100%;padding:13px 14px 13px 42px;border-radius:15px;border:1px solid var(--line);background:var(--s1);color:#fff;font-size:15px;outline:0;transition:border-color .2s,box-shadow .2s}
+.search input:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(91,124,255,.18)}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round}
+.fchips{display:flex;gap:8px;overflow-x:auto;margin:0 -16px 12px;padding:0 16px;scrollbar-width:none}
+.fchips::-webkit-scrollbar{display:none}
+.fc{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:var(--s1);border:1px solid var(--line);font-size:13px;font-weight:650;color:var(--muted);transition:all .2s}
+.fc.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 8px 18px -8px rgba(91,124,255,.9)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.sel{appearance:none;-webkit-appearance:none;padding:8px 28px 8px 12px;border-radius:12px;border:1px solid var(--line);color:#fff;font-size:13px;font-weight:600;outline:0;
+  background:var(--s1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238d96b0' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center}
+.seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;margin:12px 0 4px;padding:4px;border-radius:15px;background:var(--s1);border:1px solid var(--line)}
+.seg button{position:relative;z-index:1;padding:10px 6px;font-weight:700;font-size:13.5px;color:var(--muted);transition:color .25s}
+.seg button.on{color:#fff}
+.seg i{position:absolute;top:4px;bottom:4px;left:4px;border-radius:11px;background:var(--grad);transition:transform .35s cubic-bezier(.3,1.3,.4,1)}
+
+/* ===== списки ===== */
+.list{border-radius:var(--r);background:var(--s1);border:1px solid var(--line);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;width:100%;text-align:left}
+.row+.row{border-top:1px solid var(--line)}
+button.row{transition:background .2s}button.row:active{background:var(--s2)}
+.row .ri{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--s3);font-size:18px;flex:0 0 38px}
+.row .rt{flex:1;min-width:0}.row .rt b{display:block;font-size:14.5px;font-weight:650}.row .rt span{display:block;font-size:12.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .ra{font-weight:750;font-size:14.5px;white-space:nowrap}
+.plus{color:var(--up)}.minus{color:var(--down)}
+.row .chev{width:16px;height:16px;stroke:var(--dim);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.deal .gart{width:48px;flex:0 0 48px;border-radius:12px}.deal .gart .pat{display:none}
+.status{font-size:11.5px;font-weight:750;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.s-active{background:rgba(47,209,154,.14);color:var(--up)}
+.s-wait{background:rgba(255,190,85,.14);color:var(--warn)}
+.s-done{background:rgba(255,255,255,.08);color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:28px 14px;border:1px dashed var(--line2);border-radius:var(--r);font-size:14px;line-height:1.45}
+.empty b{display:block;font-size:30px;margin-bottom:6px}
+.sw{position:relative;width:46px;height:28px;border-radius:99px;background:var(--s3);border:1px solid var(--line2);transition:background .25s;flex:0 0 46px}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .3s cubic-bezier(.3,1.5,.4,1)}
+.sw.on{background:var(--acc)}.sw.on::after{transform:translateX(18px)}
+
+/* ===== профиль / кошелёк ===== */
+.prof{display:flex;align-items:center;gap:14px;padding:16px;border-radius:22px;background:var(--s1);border:1px solid var(--line)}
+.ava{width:56px;height:56px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:22px;font-weight:800;overflow:hidden;flex:0 0 56px}
+.ava img{width:100%;height:100%;object-fit:cover}
+.prof .pn{font-size:18px;font-weight:750}.prof .pi{font-size:12.5px;color:var(--muted);margin-top:2px}
+.twoc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.foot{margin:30px 0 8px;text-align:center;font-size:11.5px;line-height:1.5;color:var(--dim)}
+
+/* ===== нижний лист ===== */
+.overlay{position:fixed;inset:0;background:rgba(3,5,12,.66);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .3s;z-index:40}
+.overlay.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;max-height:93vh;overflow-y:auto;border-radius:28px 28px 0 0;
+  padding:0 18px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(180deg,#171d33,#0e1324);border:1px solid var(--line2);border-bottom:0;
+  box-shadow:0 -20px 60px rgba(0,0,0,.55);transform:translateY(105%);transition:transform .45s cubic-bezier(.2,.9,.25,1);scrollbar-width:none;overscroll-behavior:contain}
+.sheet::-webkit-scrollbar{display:none}
+.sheet.open{transform:translateY(0)}
+.grab{position:sticky;top:0;padding:11px 0 8px;display:grid;place-items:center;z-index:2;background:linear-gradient(#171d33 70%,transparent);touch-action:none}
+.grab i{width:44px;height:5px;border-radius:9px;background:rgba(255,255,255,.22)}
+.st{animation:stepIn .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes stepIn{from{opacity:0;transform:translateX(18px)}}
+.st h2{margin:4px 0 4px;font-size:23px;font-weight:800;letter-spacing:-.015em}
+.sub{margin:0 0 4px;color:var(--muted);font-size:14px;line-height:1.45}
+.back{color:#9fb2ff;font-size:14px;font-weight:650;padding:2px 0 6px}
+
+/* ===== кнопки, поля ===== */
+.btn{position:relative;overflow:hidden;width:100%;margin-top:14px;padding:16px;border-radius:16px;font-weight:750;font-size:16px;transition:transform .15s,opacity .2s,filter .2s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--grad);box-shadow:0 12px 26px -10px rgba(110,100,255,.95)}
+.btn.ghost{background:var(--s3);border:1px solid var(--line2)}
+.btn.danger{background:rgba(255,97,120,.14);color:#ff8a9c;border:1px solid rgba(255,97,120,.3)}
+.btn.sm{padding:12px;font-size:14.5px;margin-top:0}
+.btn:disabled{opacity:.38;filter:grayscale(.5);pointer-events:none;box-shadow:none}
+.rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);transform:scale(0);animation:rip .6s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(3.4);opacity:0}}
+.field{display:block;margin:14px 0 6px}
+.field>span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:7px}
+.field input{width:100%;padding:15px 16px;border-radius:15px;border:1.5px solid var(--line2);background:rgba(255,255,255,.04);color:#fff;font-size:18px;font-weight:650;outline:0;transition:border-color .2s,box-shadow .2s}
+.field input:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(91,124,255,.22)}
+.wrap{position:relative}
+.wrap .max{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:750;padding:7px 11px;border-radius:10px;background:rgba(91,124,255,.22);color:#b9c6ff}
+.hint{font-size:12.5px;color:var(--muted);margin:2px 2px 8px}.hint b{color:#fff}
+.err{color:#ff8a9c;font-size:12.5px;min-height:18px;margin:2px 2px 0}
+.rows{border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);padding:3px 14px;margin-top:10px}
+.rows>div{display:flex;justify-content:space-between;gap:10px;padding:11px 0;font-size:14px;color:var(--muted)}
+.rows>div+div{border-top:1px solid var(--line)}.rows b{color:#fff;font-variant-numeric:tabular-nums;text-align:right}
+.rows .big b{color:var(--cyan);font-size:16px}
+.mini{display:flex;align-items:center;gap:12px;margin:12px 0 2px;padding:10px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.mini .gart{width:56px;flex:0 0 56px;border-radius:13px}.mini .gart .pat{display:none}
+.mini .n{font-weight:700}.mini .m{font-size:12.5px;color:var(--muted);margin-top:2px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 4px;max-height:42vh;overflow-y:auto;padding:2px;scrollbar-width:none}
+.pgrid::-webkit-scrollbar{display:none}
+.pick{position:relative;padding:6px;border-radius:15px;background:rgba(255,255,255,.04);border:1.5px solid var(--line);text-align:left;transition:transform .2s,border-color .2s,box-shadow .2s}
+.pick:active{transform:scale(.95)}
+.pick.sel{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(62,216,232,.25),0 10px 24px -10px rgba(62,216,232,.6)}
+.pick.sel::after{content:"✓";position:absolute;top:10px;right:10px;width:21px;height:21px;border-radius:50%;background:var(--cyan);color:#04202a;font-weight:800;font-size:12px;display:grid;place-items:center;animation:pop .35s cubic-bezier(.3,1.7,.4,1)}
+@keyframes pop{from{transform:scale(0)}}
+.pick .gart{border-radius:10px}.pick .gart .pat{display:none}
+.pick .pn{font-size:11.5px;font-weight:700;margin:6px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick .pm{font-size:11px;color:var(--muted);margin:1px 2px 2px}
+
+/* ===== карточка лота ===== */
+.hero{position:relative;margin:2px 0 14px}
+.hero .gart{border-radius:22px;max-width:300px;margin:0 auto}
+.hero .gart .fig{width:70%;height:70%}
+.ttl{font-size:22px;font-weight:800;letter-spacing:-.015em;margin:2px 0 2px}
+.attrs{margin-top:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);padding:2px 14px}
+.attrs>div{display:flex;align-items:center;justify-content:space-between;padding:11px 0;font-size:14px}
+.attrs>div+div{border-top:1px solid var(--line)}
+.attrs span{color:var(--muted)}.attrs b{display:flex;align-items:center;gap:8px;font-weight:650}
+.rar{font-size:11px;font-weight:800;padding:3px 7px;border-radius:7px;background:rgba(138,92,255,.2);color:#c5b2ff}
+.rar.rare{background:rgba(255,190,85,.18);color:var(--warn)}
+.pricebox{display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px}
+.pricebox .pv{font-size:30px;font-weight:800;letter-spacing:-.02em}.pricebox .pu{font-size:13px;color:var(--muted)}
+
+/* ===== график ===== */
+.chart{position:relative;margin-top:10px;touch-action:pan-y}
+.chart svg{display:block;width:100%;height:170px;overflow:visible}
+.chart .tip{position:absolute;top:0;pointer-events:none;padding:7px 10px;border-radius:11px;background:#0a0e1a;border:1px solid var(--line2);font-size:12px;white-space:nowrap;opacity:0;transition:opacity .15s;transform:translateX(-50%)}
+.chart .tip b{display:block;font-size:14px}.chart .tip span{color:var(--muted)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.stats>div{padding:12px 14px;border-radius:15px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.stats span{font-size:12px;color:var(--muted)}.stats b{display:block;font-size:16px;margin-top:3px}
+
+/* ===== шаги ===== */
+.steps{list-style:none;margin:14px 0 0;padding:0;counter-reset:s}
+.steps li{position:relative;counter-increment:s;padding:2px 0 16px 44px;font-size:14.5px;line-height:1.45;color:#d6dbf2}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--grad)}
+.steps li:not(:last-child)::after{content:"";position:absolute;left:14.5px;top:34px;bottom:4px;width:1.5px;background:var(--line2)}
+.copy{display:inline-flex;align-items:center;gap:8px;margin-top:7px;padding:9px 13px;border-radius:12px;background:rgba(62,216,232,.1);border:1px dashed rgba(62,216,232,.5);color:var(--cyan);font-weight:700;font-size:14px;word-break:break-all;text-align:left}
+.copy:active{transform:scale(.97)}
+.warn{display:flex;gap:10px;padding:12px 13px;border-radius:14px;background:rgba(255,190,85,.09);border:1px solid rgba(255,190,85,.28);color:#ffd9a0;font-size:12.5px;line-height:1.45;margin-top:4px}
+.center{text-align:center;padding:16px 0 4px}.center h2{margin:0 0 6px}
+.ring{width:92px;height:92px;margin:10px auto 18px;border-radius:50%;border:4px solid rgba(255,255,255,.1);border-top-color:var(--cyan);border-right-color:var(--acc);animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.chk{list-style:none;padding:0;margin:20px auto 0;max-width:300px;text-align:left}
+.chk li{display:flex;align-items:center;gap:11px;padding:8px 0;color:#6a7396;font-size:14.5px;transition:color .3s}
+.chk li i{width:22px;height:22px;border-radius:50%;border:2px solid #343c60;display:grid;place-items:center;font-style:normal;font-size:12px;transition:.3s}
+.chk li.run{color:#fff}.chk li.run i{border-color:var(--cyan);border-top-color:transparent;animation:rot .8s linear infinite}
+.chk li.ok{color:#fff}.chk li.ok i{background:var(--up);border-color:var(--up);color:#06241a;animation:pop .35s}
+.chk li.ok i::before{content:"✓";font-weight:800}
+.okmark{width:96px;height:96px;margin:6px auto 14px;display:block}
+.okmark circle{fill:rgba(47,209,154,.14);stroke:var(--up);stroke-width:3;stroke-dasharray:290;stroke-dashoffset:290;animation:draw .7s .05s forwards}
+.okmark path{fill:none;stroke:var(--up);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .45s .6s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.faq{border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);margin-top:10px;overflow:hidden}
+.faq button{width:100%;display:flex;justify-content:space-between;gap:12px;text-align:left;padding:15px;font-weight:650;font-size:14.5px}
+.faq button span{transition:transform .3s;color:var(--cyan)}
+.faq.open button span{transform:rotate(45deg)}
+.faq p{margin:0;padding:0 15px;max-height:0;overflow:hidden;color:var(--muted);font-size:13.5px;line-height:1.5;transition:max-height .35s,padding .35s}
+.faq.open p{max-height:220px;padding:0 15px 15px}
+.ul{margin:12px 0 0;padding:0;list-style:none}
+.ul li{position:relative;padding:0 0 12px 26px;font-size:14px;line-height:1.5;color:#d6dbf2}
+.ul li::before{content:"✓";position:absolute;left:0;top:0;color:var(--up);font-weight:800}
+
+.toast{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));transform:translate(-50%,-150%);z-index:80;padding:12px 18px;border-radius:14px;background:#222a47;border:1px solid var(--line2);
+  box-shadow:0 14px 34px rgba(0,0,0,.5);font-size:14px;font-weight:650;transition:transform .4s cubic-bezier(.3,1.4,.4,1);max-width:90vw;text-align:center}
+.toast.on{transform:translate(-50%,0)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:90}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.gart .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;background:inherit}
+.gart::after{z-index:2}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="2.5"/><path d="M12 9v12M3 14h18M12 9c-2.2-5-7-3.6-5.2 0M12 9c2.2-5 7-3.6 5.2 0"/></svg></div>GiftHub<span class="demo">ДЕМО</span></div>
+    <button class="bpill" data-a="tab" data-v="wallet" aria-label="Баланс"><i class="coin">T</i><b class="num"><span id="hb" data-v="0">0,00</span> <span id="hcur" class="muted" style="font-weight:700;font-size:12px">TON</span></b></button>
+  </header>
+  <main class="view" id="view"></main>
+</div>
+
+<nav class="nav" aria-label="Разделы">
+  <button data-a="tab" data-v="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Главная</button>
+  <button data-a="tab" data-v="market"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Маркет</button>
+  <button data-a="tab" data-v="gifts"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M12 9v12M3 14h18M12 9c-2-5-7-4-5 0M12 9c2-5 7-4 5 0"/></svg>Подарки</button>
+  <button data-a="tab" data-v="wallet"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/><circle cx="16.5" cy="14.5" r="1"/></svg>Кошелёк</button>
+  <button data-a="tab" data-v="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>Ещё</button>
+</nav>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab" id="grab"><i></i></div><div id="sbody"></div></div>
+<div class="toast" id="toast" role="status"></div>
+<canvas id="fx"></canvas>
+<script>
+/* ============ Подарки: данные с реальных страниц Telegram + запасные рисунки ============ */
+let _uid = 0; const uid = () => 'u' + (++_uid);
+const grad = (id, c1, c2, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="0" y1="0" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
+const RUB_PER_TON = 129.39; // примерный курс (Яндекс Финансы, июнь 2026). Обновите в CFG.rubPerTon
+
+// Цвета фонов и узоры (названия как в Telegram)
+const BD = {
+  'Grape': { c: ['#9a64c8', '#5a3088'] }, 'Midnight Blue': { c: ['#4a5a86', '#242c4a'] }, 'Roman Silver': { c: ['#b4b7c2', '#8a8d99'] },
+  'Desert Sand': { c: ['#b8a27a', '#8a7550'] }, 'Orange': { c: ['#f29a50', '#d9702f'] }, 'Copper': { c: ['#c9803f', '#9a5a28'] }
+};
+const SYM = {
+  'Star': '<path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/>',
+  'Lily': '<path d="M12 2c3 4 3 8 0 11-3-3-3-7 0-11z"/><path transform="rotate(120 12 12)" d="M12 2c3 4 3 8 0 11-3-3-3-7 0-11z"/><path transform="rotate(240 12 12)" d="M12 2c3 4 3 8 0 11-3-3-3-7 0-11z"/>',
+  'Cobra': '<path d="M12 2c4 0 6 3 6 6 0 3-2 4-3 6 0 3 2 4 3 8H6c1-4 3-5 3-8-1-2-3-3-3-6 0-3 2-6 6-6z"/>',
+  'Shield': '<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/>',
+  'Oak Leaf': '<path d="M12 2c2 2 2 3 4 3-1 2 0 3 2 4-1 2-1 3 0 5-2 0-3 1-3 3-1-1-2-1-3 0-1-2-2-3-4-3 0-2 0-3-1-4 2-1 2-2 2-4 2 0 3-1 3-4z"/>'
+};
+// Палитры моделей (только для запасного рисунка, если картинка из Telegram не загрузилась)
+const PAL = {
+  'Druid Flame': { m: '#f2b632', l: '#ffe27a', d: '#7a4a24', x: '#3fa8e0' }, 'Carrara': { m: '#d9d4c7', l: '#f4f1e8', d: '#8f8a7c', x: '#41c9a0' },
+  'Baking Hot': { m: '#e8782a', l: '#ffb15c', d: '#8a3a14', x: '#ffd24d' }, 'Pink Molasses': { m: '#6b3a2a', l: '#9a5a40', d: '#3c1f16', x: '#ff8ad0' },
+  'Mr. Biscuit': { m: '#f0a24a', l: '#ffcf8a', d: '#b0642a', x: '#e050d0' }, 'Green Goblin': { m: '#b83a3a', l: '#e0705a', d: '#6a2020', x: '#3fcf90' }
+};
+
+// Простые собственные рисунки (запасной вариант)
+const DRAW = {
+  torch: p => { const a = uid(); return `<defs>${grad(a, p.l, p.m)}</defs>
+<path d="M44 52h12l-3 44H47z" fill="${p.d}"/><path d="M34 40c0 10 8 14 16 14s16-4 16-14l-6 2c0 5-4 7-10 7s-10-2-10-7z" fill="${p.d}"/>
+<ellipse cx="50" cy="38" rx="8" ry="7" fill="${p.x}"/><path d="M50 4c8 10 14 16 14 26 0 8-6 12-14 12s-14-4-14-12c0-6 4-9 6-14 2 4 4 5 8 2-1-4 0-8 0-14z" fill="url(#${a})"/><path d="M50 22c4 6 6 9 6 14s-3 6-6 6-6-1-6-6c0-3 3-6 6-14z" fill="#fff" opacity=".6"/>`; },
+  bust: p => { const a = uid(); return `<defs>${grad(a, p.l, p.m)}</defs>
+<rect x="26" y="82" width="48" height="12" rx="3" fill="${p.d}"/><path d="M24 82c0-18 10-26 26-26s26 8 26 26z" fill="url(#${a})"/>
+<ellipse cx="50" cy="40" rx="15" ry="18" fill="url(#${a})"/><path d="M33 34c4-14 30-14 34 0-6-4-28-4-34 0z" fill="${p.m}"/>
+<circle cx="44" cy="42" r="2.4" fill="${p.x}"/><circle cx="56" cy="42" r="2.4" fill="${p.x}"/><path d="M45 51q5 3 10 0" stroke="${p.d}" stroke-width="2" fill="none" stroke-linecap="round"/>`; },
+  heart: p => { const a = uid(); return `<defs>${grad(a, p.l, p.m, .6, 1)}</defs>
+<path d="M50 90C16 66 10 40 22 26c10-11 22-6 28 4 6-10 18-15 28-4 12 14 6 40-28 64z" fill="url(#${a})"/><path d="M50 90C16 66 10 40 22 26c10-11 22-6 28 4 6-10 18-15 28-4 12 14 6 40-28 64z" fill="none" stroke="${p.d}" stroke-width="3" opacity=".6"/>
+<path d="M30 40c4-8 10-8 14-3M56 34c6-5 12-4 15 3" stroke="${p.x}" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="38" cy="56" r="3" fill="${p.d}" opacity=".5"/><circle cx="60" cy="58" r="3" fill="${p.d}" opacity=".5"/>`; },
+  ginger: p => { const a = uid(); return `<defs>${grad(a, p.l, p.m, .5, 1)}</defs>
+<circle cx="50" cy="22" r="15" fill="url(#${a})"/><path d="M34 40h32c10 0 18-4 24-10 6 4 6 12 0 17-6 5-14 6-20 6v8l10 22c2 5-1 10-7 10-5 0-8-3-10-6L50 76 41 87c-2 3-5 6-10 6-6 0-9-5-7-10l10-22v-8c-6 0-14-1-20-6-6-5-6-13 0-17 6 6 14 10 24 10z" fill="url(#${a})"/>
+<circle cx="45" cy="20" r="2.2" fill="${p.d}"/><circle cx="55" cy="20" r="2.2" fill="${p.d}"/><path d="M45 27q5 4 10 0" stroke="${p.d}" stroke-width="2" fill="none" stroke-linecap="round"/>
+<path d="M50 37l-9-5v10zM50 37l9-5v10z" fill="${p.x}"/><circle cx="50" cy="37" r="3" fill="${p.x}"/><circle cx="50" cy="52" r="2.6" fill="${p.x}"/><circle cx="50" cy="63" r="2.6" fill="${p.x}"/>`; },
+  cigar: p => { const a = uid(); return `<defs>${grad(a, p.l, p.d, 0, 1)}</defs>
+<path d="M62 30c-6-8 6-10 0-18M72 34c-6-8 6-10 0-18" stroke="${p.x}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
+<g transform="rotate(-25 50 62)"><rect x="12" y="50" width="76" height="24" rx="11" fill="url(#${a})"/><rect x="58" y="50" width="12" height="24" fill="#f2c14e"/><rect x="60" y="54" width="8" height="16" rx="2" fill="${p.x}" opacity=".7"/><ellipse cx="14" cy="62" rx="6" ry="10" fill="#ff8a3a"/><ellipse cx="14" cy="62" rx="3" ry="6" fill="#ffe08a"/></g>`; }
+};
+
+const COLS = [
+  { key: 'flame', name: 'Chill Flame', draw: 'torch', issued: 482271 },
+  { key: 'figure', name: 'Liberty Figure', draw: 'bust', issued: 295480 },
+  { key: 'heart', name: 'Cookie Heart', draw: 'heart', issued: 264486 },
+  { key: 'ginger', name: 'Ginger Cookie', draw: 'ginger', issued: 188888 },
+  { key: 'cigar', name: 'Vintage Cigar', draw: 'cigar', issued: 31024 }
+];
+const COL = Object.fromEntries(COLS.map(c => [c.key, c]));
+
+/* Подарки, прочитанные с экрана и сверенные с публичными страницами t.me/nft/…
+   rub — оценка Telegram («Ценность»), price — примерная цена в TON для маркета, left — «Количество» */
+const GIFTS = [
+  { id: 'g1', col: 'flame', num: 115116, model: 'Druid Flame', mr: 3, pat: 'Star', pr: 0.4, bd: 'Grape', br: 1.5, left: 448315, rub: 821, price: 6.9, seller: 'user_4172', slug: 'ChillFlame-115116',
+    img: 'https://cdn4.telesco.pe/file/GlxZnP-CmPCQmj23iYYQNDPcHOjjbJ1vnJpZbBI09N0jZOOcclYiZ2uToh7oGI8tiDgHKnbYU23PHYsURZsl0CkQc-UwGnYCFyqoOW0TMhd0CswoVXLiVmgrlkNvN-THitkvaW8EGQ7l2p2nyqlyLp4kMn37KTp5qoJxPG8Wi4_H1oLEjEttdbDRH640AzMJWSrOmO_MHFP5QQyBggJDN_6wxeJbIoXpFYOX3R8dDSqYKMkEdI9VtBHOZWWYDdasgt2qVNk5qwDettcviss9xhgbp6Qp1rq1Du-Klj9NW8wjjkneKVsBr-XuuOJ_Ppcs5RaF7bFVNzIGnIgf3Sibcg.jpg' },
+  { id: 'g2', col: 'figure', num: 233591, model: 'Carrara', mr: 3, pat: 'Lily', pr: 0.5, bd: 'Midnight Blue', br: 1.2, left: 268851, rub: 3206, price: 26.5, seller: 'user_8820', slug: 'LibertyFigure-233591',
+    img: 'https://cdn4.telesco.pe/file/W3lWTw8I6uIOXy0KndWZH4qe5JngcboSySfMfPSn-iAYZwW18Y44YY9ECXNANepVcNCVt1QKjUP2xiGn4PFpbhuOc1ijk1yRFPv3chvRwkkH_WpQCatcgdVImBbI2ArMNgZn3NYs27bS7me5-lxPv3zN2wEQelPU7eHwZdPv0dB-mGOstj2ZDjw5pG5SW09Z8IdNS4T3jGCwhi-VVJBd30s-SoRsCa0UkzaiElp-MancTtfWgGaG9P8DUYeWKiugRIiUSLm3IupFi0S6AGJDKNakLaN-MFoiyz_ipT4bljQHU0vuXU-QTLd_cjNAlBilQidaKE69mtYeZafyPLE0eA.jpg' },
+  { id: 'g3', col: 'heart', num: 78622, model: 'Baking Hot', mr: 0.5, pat: 'Cobra', pr: 0.2, bd: 'Roman Silver', br: 1.5, left: 200676, rub: 1192, price: 10.4, seller: 'user_2951', slug: 'CookieHeart-78622',
+    img: 'https://cdn4.telesco.pe/file/kWdqgow03loxsf5jjRydUhMNRmk6YDajACAgvYLmv0PKLV1JQfWMJQ7wk_O2LdC9oO4YOl0-4RlDR3s-LzoGS-hHNRObkv0A8a9ptH_A-NFtr8j63J5efFiXUULLORlHsh4KC9XdWNkexJhlDIu2H1Oa5dHf9Q8cVXx-BBSWYIdTYnFLUtw9Kl6vHPeiME979RtDdPKqsnaP_hpeukWnFd6ZIOmGPcrjlZVRYk-Az7-OzT6WYC_CVGdR91ksJmXzlaK9pvVjvSXPk37531o8x_nX6PtAOCjlbD1ImA4kuGPYDjtZHMqxwnAAwwXUnn8BgdtJvzDrC2-cxDCIiduuGA.jpg' },
+  { id: 'g4', col: 'ginger', num: 150351, model: 'Pink Molasses', mr: 1.2, pat: 'Star', pr: 1.8, bd: 'Desert Sand', br: 1, left: 152005, rub: 955, price: 7.9, seller: 'user_6034', slug: 'GingerCookie-150351',
+    img: 'https://cdn4.telesco.pe/file/WaumRFFutP5QsRdE8WiDLV0-3zzrynJU2jSlKTWwJ2wqJlT-_IIqWp4UMndb270sGHCu4d4EhJzSjw5TxIKguStcSlpaodbJsXlzpF0TeVDrOmYGCn_pIguyuiwG9Hceuzsk-xKfhOL4PO1tQf-sPcQYeGhUcYFjDNJvG6ZQIVUlpD4VNMglrEUuLlQ0KerJvbtXSiXKHkUOdkvKTmEwy9X-wfOZBXoRGCiYh72YuirDBwdeZsnfKW3322Tededtr1XSNBEssAoIw8QbUt656j6enCkBE9Dr-83o_35aoUB5IGmRa7ftUAjMkUsrTqR6fhXaSKBwJ1h_vZ6aJLLOow.jpg' },
+  { id: 'g5', col: 'ginger', num: 35824, model: 'Mr. Biscuit', mr: 1.7, pat: 'Shield', pr: 0.4, bd: 'Orange', br: 1.5, left: 152005, rub: 955, price: 9.2, seller: 'user_7713', slug: 'GingerCookie-35824',
+    img: 'https://cdn5.telesco.pe/file/b-vCahuXlsCOLA5tR14YHVWBYSi_0u9RsEZDqVOpUbiYgTsQb6i0hvnqRlbxeu-tiaeNQzUeEwvRmhO0rh6ZalLp5cqAzSTO6Ipl2FjblEOKYPsOdMsOwO9_yIwfX1qrF37aE2qUgDbavbXER-5XpLJbCBsDqN2W_5x0ZFGCk3uwTCbfbJ7mGLCQXMEKmvweiMhGxGdpJ7WVvvsEtYyK15OFQfP49pRclzBouxiHerLUD-Cm156cbvl4L9yuYLiPB-XPQm56gv-AKTki38cDumbUtYFd9ONyLrTn-mUOLXJ8f_fGypFJoLpy3xiHPMC295QWI13jt0_H99NRdd0QHg.jpg' },
+  { id: 'g6', col: 'cigar', num: 12316, model: 'Green Goblin', mr: 2, pat: 'Oak Leaf', pr: 0.2, bd: 'Copper', br: 1.5, left: 26849, rub: 5250, price: 44.5, seller: 'user_1307', slug: 'VintageCigar-12316',
+    img: 'https://cdn4.telesco.pe/file/C0Z8RjcBWgHPn1CBOL5w7OBnOcaaTRF4xceX6y3V9Ge3yMhpOJxlBE5Z4pmxSR1-CPqjpDyQYaZze4_b9OAQJGhpBmisYNc4-UWDCexBzCro2PiXMGTaXHXyezhYEI3EMV4YEdWy_5ZOaAyZdyrUsvbhG8eOpNGTFVBI6BT8NC1DNQBBow6FaUOxSCxKm794SHcSjh1OjmVeCxfU2muJ2xHZ_kf7yJna6isFhdTz_bw34tgWrPhx1gi0lUmFpLci5BTUl0kQ4Cp2FhlmnEcmT7Xvgx61MR78RPF4Y4K6GZEahNer0imDmwJRXG1GBQFBx5l5njSUVCykkhiOoxW3aw.jpg' }
+];
+const itemValue = it => +(it.rub / RUB_PER_TON).toFixed(2); // оценка Telegram в TON
+const colFloor = key => Math.min(...GIFTS.filter(g => g.col === key).map(g => g.price));
+
+/* Карточка подарка: фон и узор как в Telegram + картинка из Telegram (если загрузилась), иначе запасной рисунок */
+function giftArt(it, { float = false } = {}) {
+  const bd = BD[it.bd] || BD.Grape, sy = SYM[it.pat] || SYM.Star, pid = uid();
+  const pat = `<svg class="pat" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><pattern id="${pid}" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">
+<g transform="translate(3 3) scale(.62)" fill="#fff">${sy}</g><g transform="translate(15 15) scale(.4)" fill="#fff" opacity=".6">${sy}</g></pattern></defs><rect width="100" height="100" fill="url(#${pid})"/></svg>`;
+  const photo = it.img ? `<img class="photo" src="${it.img}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+  return `<div class="gart${float ? ' float' : ''}" style="--b1:${bd.c[0]};--b2:${bd.c[1]}">${pat}<svg class="fig" viewBox="0 0 100 100" aria-hidden="true">${DRAW[COL[it.col].draw](PAL[it.model] || PAL['Druid Flame'])}</svg>${photo}</div>`;
+}
+
+/* ---------- Демо-история цен коллекций (не настоящая) ---------- */
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const HIST = {};
+COLS.forEach((c, i) => {
+  const r = rng(900 + i * 17), n = 720, raw = []; let v = 1;
+  for (let k = 0; k < n; k++) { v += (1 - v) * .035 + (r() - .5) * .028; raw.push(v); }
+  const last = raw[n - 1], fl = colFloor(c.key); HIST[c.key] = raw.map(x => +(x / last * fl).toFixed(2));
+});
+const NOW = Date.now();
+const histTs = i => NOW - (719 - i) * 3600e3;
+function colStats(key) {
+  const h = HIST[key], day = h.slice(-24);
+  return { floor: h[719], change: h[719] / h[695] - 1, hi: Math.max(...day), lo: Math.min(...day), spark: h.slice(-168).filter((_, i) => i % 4 === 0) };
+}
+
+/* ============ Настройки: замените на свои значения ============ */
+const CFG = {
+  demo: true,                          // true — показывать метку «ДЕМО»
+  rubPerTon: RUB_PER_TON,              // курс для показа цен в рублях (примерный, обновите)
+  fee: 0.05,                           // комиссия сервиса с продажи
+  instantRate: 0.92,                   // выкуп «сразу» = оценка × это число
+  minWithdraw: 1, netFee: 0.05,        // вывод: минимум и сетевая комиссия, TON
+  escrow: '@your_escrow_account',      // аккаунт, на который передаётся подарок
+  support: 'https://t.me/your_support_bot',
+  depositAddress: 'UQ_ВСТАВЬТЕ_АДРЕС_КОШЕЛЬКА_СЕРВИСА',
+  depositMemo: ''                      // комментарий к пополнению (если нужен)
+};
+
+/* ============ Telegram ============ */
+const tg = window.Telegram && window.Telegram.WebApp;
+const TGU = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor('#080b12'); tg.setBackgroundColor('#080b12'); tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {} }
+const hap = (t = 'light') => { try {
+  if (!S.hap || !tg || !tg.HapticFeedback) return;
+  if (['success', 'error', 'warning'].includes(t)) tg.HapticFeedback.notificationOccurred(t); else tg.HapticFeedback.impactOccurred(t);
+} catch (e) {} };
+
+/* ============ Утилиты ============ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const fmt = n => Number(n).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const parse = v => parseFloat(String(v).replace(',', '.').replace(/[^0-9.]/g, ''));
+const S = { tab: 'home', balance: 245.8, rub: false, hap: true, market: { q: '', col: 'all', sort: 'new' }, inv: 'all', wf: 'all', items: [], lots: [], deals: [], history: [], shown: 0, seq: 100 };
+const rub = n => Math.round(n * CFG.rubPerTon).toLocaleString('ru-RU') + ' ₽';
+const P = n => S.rub ? rub(n) : fmt(n) + ' TON';
+const Pn = n => S.rub ? rub(n) : fmt(n);
+const nm = it => COL[it.col].name;
+const rareScore = it => -(Math.log(it.mr / 100) + Math.log(it.br / 100) + Math.log(it.pr / 100));
+const chgHtml = c => `<span class="chg ${c >= 0 ? 'up' : 'down'}">${c >= 0 ? '▲' : '▼'} ${Math.abs(c * 100).toFixed(1)}%</span>`;
+
+function countTo(el, from, to, ms = 900, usdEl) {
+  const t0 = performance.now();
+  const step = now => {
+    const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - p, 4), v = from + (to - from) * e;
+    el.textContent = S.rub ? Math.round(v * CFG.rubPerTon).toLocaleString('ru-RU') : fmt(v);
+    if (usdEl) usdEl.textContent = S.rub ? fmt(v) + ' TON' : '≈ ' + rub(v);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400); }
+
+/* ============ Демо-данные ============ */
+(function seed() {
+  S.lots = GIFTS.map(g => Object.assign({}, g));
+  S.items = []; S.deals = [];
+  S.history = [
+    { k: 'deposit', t: 'Пополнение', s: '3 дня назад', a: 100 }, { k: 'sell', t: 'Продажа · Cookie Heart', s: 'Вчера', a: 61.2 },
+    { k: 'buy', t: 'Покупка · Ginger Cookie', s: '5 дней назад', a: -28 }, { k: 'withdraw', t: 'Вывод на кошелёк', s: '6 дней назад', a: -40 }
+  ];
+})();
+
+const allLots = () => S.lots.concat(S.items.filter(i => i.listed).map(i => Object.assign({}, i, { price: i.listed, mine: true, seller: 'вы' })));
+const freeItems = () => S.items.filter(i => !i.listed && !i.locked);
+
+/* ============ Карточки ============ */
+const lotCard = (l, i = 0) => `<button class="lot" data-a="lot" data-id="${l.id}" style="animation-delay:${Math.min(i, 10) * 35}ms">
+  ${giftArt(l)}${l.mine ? '<span class="tag mine">Ваш лот</span>' : ''}
+  <div class="lot-n">${nm(l)}</div><div class="lot-s">#${l.num} · ${l.model}</div>
+  <div class="lot-p">${S.rub ? '' : '<i class="coin">T</i>'}${Pn(l.price)}</div></button>`;
+const spark = (arr, up) => {
+  const mn = Math.min(...arr), mx = Math.max(...arr), sp = (mx - mn) || 1, id = uid();
+  const pts = arr.map((v, i) => [i / (arr.length - 1) * 100, 28 - (v - mn) / sp * 24]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+  const c = up ? '#2fd19a' : '#ff6178';
+  return `<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>
+<path d="${d}L100 30L0 30Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${c}" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+};
+const colRep = key => GIFTS.find(g => g.col === key);
+const ccard = ({ c, s }) => `<button class="ccard" data-a="col" data-v="${c.key}">${giftArt(colRep(c.key))}
+  <div class="cn">${c.name}</div><div class="cf"><b class="num">${Pn(s.floor)}</b>${chgHtml(s.change)}</div>${spark(s.spark, s.change >= 0)}</button>`;
+const statusPill = s => ({ active: '<span class="status s-active">Активна</span>', wait: '<span class="status s-wait">Ожидает</span>', done: '<span class="status s-done">Завершено</span>' }[s]);
+const dealRow = d => `<div class="row deal">${giftArt(d.item)}<div class="rt"><b>${{ sell: 'Продажа', swap: 'Обмен', buy: 'Покупка' }[d.type]} · ${nm(d.item)}</b><span>#${d.item.num} · ${d.text}</span></div>${statusPill(d.status)}</div>`;
+const dealsHtml = () => S.deals.length ? `<div class="list">${S.deals.map(dealRow).join('')}</div>`
+  : `<div class="empty"><b>🤝</b>Сделок пока нет. Выставьте подарок на продажу или предложите обмен.</div>`;
+const IC = {
+  sell: '<path d="M3 12l9-9h8v8l-9 9z"/><circle cx="16" cy="8" r="1.4"/>', swap: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+  wd: '<path d="M12 3v12m0 0l-4-4m4 4l4-4M4 20h16"/>', sup: '<path d="M4 13v-1a8 8 0 0116 0v1M4 13h3v5H5a1 1 0 01-1-1zm16 0h-3v5h2a1 1 0 001-1zM18 18c0 2-3 3-6 3"/>',
+  chev: '<path d="M9 6l6 6-6 6"/>'
+};
+
+/* ============ Экраны ============ */
+function viewHome() {
+  const onSale = S.items.filter(i => i.listed).length, inSwap = S.deals.filter(d => d.type === 'swap' && d.status !== 'done').length;
+  const trend = COLS.map(c => ({ c, s: colStats(c.key) })).sort((a, b) => Math.abs(b.s.change) - Math.abs(a.s.change));
+  return `<button class="bal" data-a="tab" data-v="wallet" aria-label="Баланс, открыть кошелёк">
+    <div class="l">Ваш баланс <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${IC.chev}</svg></div>
+    <div class="v"><span class="n num" id="balBig">0,00</span><span class="c">${S.rub ? 'RUB' : 'TON'}</span></div>
+    <div class="u num" id="balAlt"></div>
+    <div class="chips"><span class="chip">На продаже<b>${onSale}</b></span><span class="chip">В обмене<b>${inSwap}</b></span><span class="chip">Подарков<b>${S.items.length}</b></span></div>
+    <div class="shine"></div></button>
+  <div class="qa">
+    <button data-a="sell"><div class="ic c1"><svg viewBox="0 0 24 24">${IC.sell}</svg></div>Продажа</button>
+    <button data-a="swap"><div class="ic c2"><svg viewBox="0 0 24 24">${IC.swap}</svg></div>Обмен</button>
+    <button data-a="withdraw"><div class="ic c3"><svg viewBox="0 0 24 24">${IC.wd}</svg></div>Вывод</button>
+    <button data-a="support"><div class="ic c4"><svg viewBox="0 0 24 24">${IC.sup}</svg></div>Поддержка</button></div>
+  <section class="sec"><div class="sec-h"><h3>Рынок сегодня</h3><span>${CFG.demo ? 'демо-данные' : 'за 24 ч'}</span></div><div class="hscroll">${trend.map(ccard).join('')}</div></section>
+  <section class="sec"><div class="sec-h"><h3>Новые лоты</h3><button data-a="tab" data-v="market">Все лоты</button></div><div class="lots">${S.lots.slice(0, 4).map(lotCard).join('')}</div></section>
+  <section class="sec"><div class="sec-h"><h3>Мои сделки</h3><span>${S.deals.length ? S.deals.length + ' шт.' : ''}</span></div>${dealsHtml()}</section>`;
+}
+
+const SORTS = { new: 'Новые', asc: 'Сначала дешёвые', desc: 'Сначала дорогие', rare: 'Самые редкие', num: 'Малый номер' };
+function marketList() {
+  const m = S.market, q = m.q.trim().toLowerCase();
+  let list = allLots().filter(l => m.col === 'all' || l.col === m.col);
+  if (q) list = list.filter(l => (nm(l) + ' #' + l.num + ' ' + l.model + ' ' + l.bd + ' ' + l.pat).toLowerCase().includes(q));
+  const by = { new: (a, b) => (a.mine ? -1 : 0) - (b.mine ? -1 : 0) || S.lots.indexOf(a) - S.lots.indexOf(b), asc: (a, b) => a.price - b.price, desc: (a, b) => b.price - a.price, rare: (a, b) => rareScore(b) - rareScore(a), num: (a, b) => a.num - b.num };
+  return list.sort(by[m.sort]);
+}
+function lotsGridHtml() {
+  const list = marketList();
+  const cs = S.market.col !== 'all' ? `<button class="btn ghost sm" style="margin-bottom:12px" data-a="col" data-v="${S.market.col}">📈 График и статистика коллекции</button>` : '';
+  return cs + (list.length ? `<div class="lots">${list.map(lotCard).join('')}</div>` : `<div class="empty"><b>🔍</b>Ничего не найдено. Измените запрос или фильтр.</div>`);
+}
+function viewMarket() {
+  const m = S.market;
+  return `<div class="h1">Маркет</div>
+  <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="q" type="search" placeholder="Название, номер, модель…" value="${m.q.replace(/"/g, '&quot;')}" autocomplete="off"></div>
+  <div class="fchips"><button class="fc ${m.col === 'all' ? 'on' : ''}" data-a="mcol" data-v="all">Все</button>${COLS.map(c => `<button class="fc ${m.col === c.key ? 'on' : ''}" data-a="mcol" data-v="${c.key}">${c.name}</button>`).join('')}</div>
+  <div class="toolbar"><span id="cnt">${marketList().length} лотов</span><select class="sel" id="sort">${Object.entries(SORTS).map(([k, v]) => `<option value="${k}" ${m.sort === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+  <div id="lotsGrid">${lotsGridHtml()}</div>`;
+}
+const whereTag = it => it.listed ? '<span class="tag tsale">Продаётся</span>' : it.locked ? '<span class="tag tsale">В обмене</span>' : it.where === 'profile' ? '<span class="tag tprof">В профиле</span>' : '<span class="tag tvault">На платформе</span>';
+function viewInv() {
+  const f = S.inv, list = S.items.filter(i => f === 'all' || (f === 'profile' && i.where === 'profile') || (f === 'vault' && i.where === 'vault') || (f === 'sale' && i.listed));
+  const tot = S.items.reduce((s, i) => s + itemValue(i), 0), idx = { all: 0, profile: 1, vault: 2, sale: 3 }[f];
+  return `<div class="h1">Мои подарки</div>
+  <div class="list"><div class="row"><div class="rt"><span>Оценочная стоимость коллекции</span><b class="num" style="font-size:22px;margin-top:3px">${P(tot)}</b></div><div class="rt" style="flex:0 0 auto;text-align:right"><span>Подарков</span><b style="font-size:22px;margin-top:3px">${S.items.length}</b></div></div></div>
+  <div class="seg" style="margin-top:14px;margin-bottom:14px"><i style="width:calc(25% - 2px);transform:translateX(${idx * 100}%)"></i>
+    ${[['all', 'Все'], ['profile', 'В профиле'], ['vault', 'Платформа'], ['sale', 'Продажа']].map(([k, v]) => `<button class="${f === k ? 'on' : ''}" data-a="invf" data-v="${k}">${v}</button>`).join('')}</div>
+  ${list.length ? `<div class="lots">${list.map((it, i) => `<button class="lot" data-a="item" data-id="${it.id}" style="animation-delay:${i * 40}ms">${giftArt(it)}${whereTag(it)}
+    <div class="lot-n">${nm(it)}</div><div class="lot-s">#${it.num} · ${it.model}</div><div class="lot-p" style="font-weight:700;font-size:13.5px"><span class="muted" style="font-weight:600">≈</span>${P(itemValue(it))}</div></button>`).join('')}</div>`
+    : `<div class="empty"><b>🎁</b>${S.items.length ? 'В этой категории пока пусто.' : 'У вас пока нет подарков.<br>Купите подарок на маркете, и он появится здесь.'}</div>`}
+  <div class="twoc"><button class="btn ghost sm" data-a="sell">Продать подарок</button><button class="btn ghost sm" data-a="swap">Обменять</button></div>`;
+}
+const HK = { deposit: ['⬆️', 'Пополнения'], withdraw: ['⬇️', 'Выводы'], buy: ['🛒', 'Покупки'], sell: ['💰', 'Продажи'], swap: ['🔁', 'Обмены'] };
+function viewWallet() {
+  const f = S.wf, list = S.history.filter(h => f === 'all' || h.k === f);
+  return `<div class="h1">Кошелёк</div>
+  <div class="bal" style="cursor:default"><div class="l">Доступно</div><div class="v"><span class="n num" id="balBig2">${S.rub ? Math.round(S.balance * CFG.rubPerTon).toLocaleString('ru-RU') : fmt(S.balance)}</span><span class="c">${S.rub ? 'RUB' : 'TON'}</span></div>
+    <div class="u num">${S.rub ? fmt(S.balance) + ' TON' : '≈ ' + rub(S.balance)}</div><div class="shine"></div></div>
+  <div class="twoc"><button class="btn primary sm" data-a="deposit">Пополнить</button><button class="btn ghost sm" data-a="withdraw">Вывести</button></div>
+  <section class="sec"><div class="sec-h"><h3>История операций</h3></div>
+  <div class="fchips"><button class="fc ${f === 'all' ? 'on' : ''}" data-a="wf" data-v="all">Все</button>${Object.entries(HK).map(([k, v]) => `<button class="fc ${f === k ? 'on' : ''}" data-a="wf" data-v="${k}">${v[1]}</button>`).join('')}</div>
+  ${list.length ? `<div class="list">${list.map(h => `<div class="row"><div class="ri">${HK[h.k][0]}</div><div class="rt"><b>${h.t}</b><span>${h.s}</span></div>${h.a == null ? '' : `<div class="ra num ${h.a > 0 ? 'plus' : 'minus'}">${h.a > 0 ? '+' : '−'}${Pn(Math.abs(h.a))}</div>`}</div>`).join('')}</div>`
+    : `<div class="empty"><b>🧾</b>Операций пока нет.</div>`}</section>`;
+}
+function viewMore() {
+  const name = TGU ? [TGU.first_name, TGU.last_name].filter(Boolean).join(' ') : 'Гость', ini = (name[0] || 'G').toUpperCase();
+  const av = TGU && TGU.photo_url ? `<img src="${TGU.photo_url}" alt="">` : ini;
+  const link = (a, ico, t, s) => `<button class="row" data-a="${a}"><div class="ri">${ico}</div><div class="rt"><b>${t}</b><span>${s}</span></div><svg class="chev" viewBox="0 0 24 24">${IC.chev}</svg></button>`;
+  const tog = (a, ico, t, s, on) => `<button class="row" data-a="${a}"><div class="ri">${ico}</div><div class="rt"><b>${t}</b><span>${s}</span></div><i class="sw ${on ? 'on' : ''}"></i></button>`;
+  return `<div class="h1">Ещё</div>
+  <div class="prof"><div class="ava">${av}</div><div><div class="pn">${name.replace(/</g, '&lt;')}</div><div class="pi">${TGU ? 'ID ' + TGU.id : 'Откройте приложение из Telegram, чтобы видеть свой профиль'}</div></div></div>
+  <section class="sec" style="margin-top:18px"><div class="list">
+    ${link('support', '💬', 'Поддержка', 'Частые вопросы и чат с оператором')}
+    ${link('rules', '🛡️', 'Правила и безопасность', 'Как не потерять подарки')}
+    ${link('about', 'ℹ️', 'О сервисе', 'Версия, условия, контакты')}</div></section>
+  <section class="sec"><div class="sec-h"><h3>Настройки</h3></div><div class="list">
+    ${tog('trub', '₽', 'Цены в рублях', 'Показывать в ₽ вместо TON', S.rub)}
+    ${tog('thap', '📳', 'Вибрация', 'Отклик при нажатиях', S.hap)}</div></section>
+  <p class="foot">GiftHub — независимый сервис.<br>Не связан с Telegram и не одобрен Telegram.<br>${CFG.demo ? 'Демонстрационная версия: данные и цены не настоящие.' : ''}</p>`;
+}
+
+/* ============ Роутер ============ */
+const VIEWS = { home: viewHome, market: viewMarket, gifts: viewInv, wallet: viewWallet, more: viewMore };
+function render(anim = true) {
+  const v = $('#view'); v.innerHTML = `<div class="${anim ? 'page' : ''}">${VIEWS[S.tab]()}</div>`;
+  $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.v === S.tab));
+  if (S.tab === 'home') { countTo($('#balBig'), 0, S.balance, 1100, $('#balAlt')); }
+  if (S.tab === 'market') {
+    const q = $('#q'); q.oninput = () => { S.market.q = q.value; $('#lotsGrid').innerHTML = lotsGridHtml(); $('#cnt').textContent = marketList().length + ' лотов'; };
+    $('#sort').onchange = e => { S.market.sort = e.target.value; hap(); $('#lotsGrid').innerHTML = lotsGridHtml(); };
+  }
+  S.shown = S.balance; setHeader();
+}
+function setHeader() {
+  const el = $('#hb'); if (!el) return;
+  const from = parseFloat(el.dataset.v || 0); el.dataset.v = S.balance;
+  countTo(el, from, S.balance, 800); $('#hcur').textContent = S.rub ? '' : 'TON'; $('.bpill .coin').textContent = S.rub ? '₽' : 'T';
+}
+function go(tab) { if (S.tab === tab && $('#view').firstChild) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } S.tab = tab; render(); window.scrollTo(0, 0); }
+
+/* ============ Нижний лист ============ */
+const sheet = $('#sheet'), overlay = $('#overlay'), body = $('#sbody');
+let tok = 0;
+function openSheet() { overlay.classList.add('on'); sheet.classList.add('open'); sheet.scrollTop = 0; try { tg && tg.BackButton && tg.BackButton.show(); } catch (e) {} }
+function closeSheet() { tok++; overlay.classList.remove('on'); sheet.classList.remove('open'); sheet.style.transform = ''; try { tg && tg.BackButton && tg.BackButton.hide(); } catch (e) {} }
+const setBody = html => { body.innerHTML = html; sheet.scrollTop = 0; $$('.btn', body).forEach(b => b.addEventListener('pointerdown', e => {
+  const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height) / 2, d = document.createElement('span'); d.className = 'rip';
+  d.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`; b.appendChild(d); setTimeout(() => d.remove(), 650); })); };
+overlay.onclick = closeSheet;
+try { tg && tg.BackButton && tg.BackButton.onClick(closeSheet); } catch (e) {}
+(() => { const g = $('#grab'); let y0 = null, dd = 0;
+  g.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; dd = 0; sheet.style.transition = 'none'; }, { passive: true });
+  g.addEventListener('touchmove', e => { if (y0 == null) return; dd = Math.max(0, e.touches[0].clientY - y0); sheet.style.transform = `translateY(${dd}px)`; }, { passive: true });
+  g.addEventListener('touchend', () => { sheet.style.transition = ''; y0 = null; if (dd > 110) closeSheet(); else sheet.style.transform = ''; }); })();
+
+function refresh() { render(false); }
+function confetti() {
+  const cv = $('#fx'), ctx = cv.getContext('2d'), dpr = window.devicePixelRatio || 1;
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; ctx.scale(dpr, dpr);
+  const cols = ['#5b7cff', '#3ed8e8', '#8a5cff', '#ffd24d', '#2fd19a', '#ff6a9a'];
+  const Pp = Array.from({ length: 120 }, () => ({ x: innerWidth / 2, y: innerHeight * .55, vx: (Math.random() - .5) * 14, vy: -Math.random() * 15 - 5, s: Math.random() * 7 + 4, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[(Math.random() * cols.length) | 0] }));
+  const t0 = performance.now();
+  (function f(now) { const k = (now - t0) / 2300; ctx.clearRect(0, 0, innerWidth, innerHeight);
+    Pp.forEach(p => { p.vy += .32; p.vx *= .992; p.x += p.vx; p.y += p.vy; p.r += p.vr; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - k); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .6); ctx.restore(); });
+    if (k < 1) requestAnimationFrame(f); else ctx.clearRect(0, 0, innerWidth, innerHeight); })(t0);
+}
+
+/* ============ Общие элементы листов ============ */
+const miniGift = (it, extra = '') => `<div class="mini">${giftArt(it)}<div><div class="n">${nm(it)} #${it.num}</div><div class="m">${extra || 'оценка ≈ ' + P(itemValue(it))}</div></div></div>`;
+const pct = r => String(r).replace('.', ',') + '%';
+const rarChip = r => `<span class="rar ${r <= 1 ? 'rare' : ''}">${pct(r)}</span>`;
+const attrsHtml = it => `<div class="attrs"><div><span>Модель</span><b>${it.model} ${rarChip(it.mr)}</b></div>
+  <div><span>Фон</span><b>${it.bd} ${rarChip(it.br)}</b></div><div><span>Узор</span><b>${it.pat} ${rarChip(it.pr)}</b></div>
+  <div><span>Количество</span><b>${(it.left || 0).toLocaleString('ru-RU')} <span class="muted" style="font-weight:500">из ${COL[it.col].issued.toLocaleString('ru-RU')}</span></b></div>
+  ${it.rub ? `<div><span>Оценка Telegram</span><b>~${it.rub.toLocaleString('ru-RU')} ₽</b></div>` : ''}</div>`;
+const pickGrid = (list, { sub } = {}) => list.length ? `<div class="pgrid">${list.map(it => `<button class="pick" data-id="${it.id}">${giftArt(it)}<div class="pn">${nm(it)}</div><div class="pm">#${it.num} · ${sub ? sub(it) : '≈ ' + Pn(itemValue(it))}</div></button>`).join('')}</div>`
+  : `<div class="empty" style="margin-top:14px"><b>🎁</b>Нет подходящих подарков</div>`;
+function wirePick(list, cb) { $$('.pick', body).forEach(el => el.onclick = () => { $$('.pick', body).forEach(x => x.classList.remove('sel')); el.classList.add('sel'); hap(); cb(list.find(i => String(i.id) === el.dataset.id)); }); }
+
+// Шаг «передайте подарок на специальный аккаунт»
+function transferStep({ item, onBack, onDone, title = 'Передайте подарок' }) {
+  setBody(`<div class="st"><button class="back" id="back">‹ Назад</button><h2>${title}</h2>
+    <p class="sub">Чтобы провести сделку, подарок нужно передать на специальный аккаунт сервиса. Он хранится там до завершения сделки.</p>${miniGift(item)}
+    <ol class="steps"><li>Откройте чат с аккаунтом<br><button class="copy" id="copy">${CFG.escrow} <span>⧉</span></button></li>
+    <li>Отправьте ему подарок «${nm(item)} #${item.num}» через меню подарков в Telegram</li>
+    <li>Вернитесь сюда и нажмите «Я передал подарок». Мы проверим получение.</li></ol>
+    <div class="warn"><span>⚠️</span><span>Передавайте подарок только на аккаунт, указанный в приложении. Администрация никогда не просит коды из Telegram, пароли и сид-фразы.</span></div>
+    <button class="btn ghost" id="open">Открыть чат</button><button class="btn primary" id="sent">Я передал подарок</button></div>`);
+  $('#back').onclick = onBack;
+  $('#copy').onclick = () => { try { navigator.clipboard && navigator.clipboard.writeText(CFG.escrow); } catch (e) {} hap('medium'); toast('Имя аккаунта скопировано'); };
+  $('#open').onclick = () => { const u = 'https://t.me/' + CFG.escrow.replace('@', ''); try { tg && tg.openTelegramLink ? tg.openTelegramLink(u) : window.open(u, '_blank'); } catch (e) {} };
+  $('#sent').onclick = () => { hap('medium'); onDone(); };
+}
+// Шаг «проверяем…» → «готово»
+function progressStep({ items, okTitle, okText, after, title = 'Проверяем…' }) {
+  const my = ++tok;
+  setBody(`<div class="st center"><div class="ring"></div><h2>${title}</h2><p class="sub">Это займёт несколько секунд</p><ul class="chk">${items.map(t => `<li><i></i>${t}</li>`).join('')}</ul></div>`);
+  $$('.chk li', body).forEach((li, i) => {
+    setTimeout(() => { if (my === tok) li.className = 'run'; }, 300 + i * 900);
+    setTimeout(() => { if (my === tok) { li.className = 'ok'; hap('light'); } }, 1050 + i * 900);
+  });
+  setTimeout(() => {
+    if (my !== tok) return; after();
+    setBody(`<div class="st center"><svg class="okmark" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/><path d="M30 52l14 14 27-30"/></svg><h2>${okTitle}</h2><p class="sub">${okText}</p><button class="btn primary" id="fin">Готово</button></div>`);
+    $('#fin').onclick = closeSheet; hap('success'); confetti();
+  }, 1250 + items.length * 900);
+}
+const addHist = (k, t, a) => S.history.unshift({ k, t, s: 'Только что', a });
+const addDeal = (type, item, status, text) => S.deals.unshift({ id: ++S.seq, type, item, status, text });
+const dropItem = it => { S.items = S.items.filter(i => i.id !== it.id); };
+
+/* ============ График цены ============ */
+function mountChart(el, key) {
+  let range = 168;
+  const draw = () => {
+    const h = HIST[key], n = range, data = h.slice(-n).map((v, i) => ({ v, t: histTs(720 - n + i) }));
+    const W = el.clientWidth || 340, H = 170, pt = 14, pb = 20;
+    const mn = Math.min(...data.map(d => d.v)), mx = Math.max(...data.map(d => d.v)), sp = (mx - mn) || 1;
+    const X = i => W * i / (data.length - 1), Y = v => pt + (H - pt - pb) * (1 - (v - mn) / sp);
+    const line = data.map((d, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(d.v).toFixed(1)).join('');
+    const up = data[data.length - 1].v >= data[0].v, c = up ? '#2fd19a' : '#ff6178', gid = uid();
+    const dt = t => new Date(t).toLocaleString('ru-RU', n <= 24 ? { hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'short' });
+    el.querySelector('.cv').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="График цены">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".3"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>
+      ${[0, .5, 1].map(f => { const yy = pt + (H - pt - pb) * f; return `<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="#fff" stroke-opacity=".07" stroke-dasharray="3 5"/><text x="2" y="${yy - 4}" font-size="10" fill="#8d96b0">${Pn(mx - sp * f)}</text>`; }).join('')}
+      <path d="${line}L${W} ${H - pb}L0 ${H - pb}Z" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <text x="0" y="${H - 4}" font-size="10" fill="#8d96b0">${dt(data[0].t)}</text><text x="${W}" y="${H - 4}" font-size="10" fill="#8d96b0" text-anchor="end">${dt(data[data.length - 1].t)}</text>
+      <line id="xl" y1="${pt}" y2="${H - pb}" stroke="#fff" stroke-opacity=".35" style="display:none"/><circle id="xd" r="5" fill="${c}" stroke="#0e1324" stroke-width="2.5" style="display:none"/></svg><div class="tip"></div>`;
+    const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), xl = el.querySelector('#xl'), xd = el.querySelector('#xd');
+    const move = e => {
+      const r = svg.getBoundingClientRect(), f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), i = Math.round(f * (data.length - 1)), d = data[i];
+      xl.style.display = xd.style.display = ''; xl.setAttribute('x1', X(i)); xl.setAttribute('x2', X(i)); xd.setAttribute('cx', X(i)); xd.setAttribute('cy', Y(d.v));
+      tip.innerHTML = `<b class="num">${P(d.v)}</b><span>${new Date(d.t).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>`;
+      tip.style.opacity = 1; tip.style.left = Math.min(W - 60, Math.max(60, X(i))) + 'px';
+    };
+    const leave = () => { xl.style.display = xd.style.display = 'none'; tip.style.opacity = 0; };
+    svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move); svg.addEventListener('pointerleave', leave);
+    const ch = data[data.length - 1].v / data[0].v - 1; el.querySelector('.rc').innerHTML = chgHtml(ch);
+  };
+  el.innerHTML = `<div class="seg" style="margin:0 0 6px"><i style="width:calc(33.33% - 2.7px)"></i><button data-r="24">24 ч</button><button data-r="168" class="on">7 дн.</button><button data-r="720">30 дн.</button></div>
+    <div style="display:flex;justify-content:flex-end;margin:4px 2px 0;font-size:12px;color:var(--muted);gap:6px;align-items:center">за период <span class="rc"></span></div><div class="cv" style="position:relative"></div>`;
+  const seg = el.querySelector('.seg'), ind = seg.querySelector('i');
+  const setR = r => { range = r; const idx = { 24: 0, 168: 1, 720: 2 }[r]; ind.style.transform = `translateX(${idx * 100}%)`; $$('button', seg).forEach(b => b.classList.toggle('on', +b.dataset.r === r)); draw(); };
+  $$('button', seg).forEach(b => b.onclick = () => { hap(); setR(+b.dataset.r); });
+  el.classList.add('chart'); ind.style.transform = 'translateX(100%)'; draw();
+}
+
+/* ============ Карточки: коллекция, лот, подарок ============ */
+function colSheet(key) {
+  const c = COL[key], s = colStats(key), cnt = allLots().filter(l => l.col === key).length;
+  setBody(`<div class="st"><div style="display:flex;gap:14px;align-items:center;margin-top:4px"><div style="width:74px;flex:0 0 74px">${giftArt(colRep(key), { float: true })}</div>
+    <div><h2 style="margin:0">${c.name}</h2><div class="sub" style="margin:2px 0 0">Выпущено ${c.issued.toLocaleString('ru-RU')} · ${CFG.demo ? 'демо-цены' : 'цена коллекции'}</div></div></div>
+    <div class="pricebox"><div><div class="pu">Минимальная цена (floor)</div><div class="pv num">${P(s.floor)}</div></div>${chgHtml(s.change)}</div>
+    <div id="ch"></div>
+    <div class="stats"><div><span>Макс. за 24 ч</span><b class="num">${P(s.hi)}</b></div><div><span>Мин. за 24 ч</span><b class="num">${P(s.lo)}</b></div>
+    <div><span>Лотов в продаже</span><b>${cnt}</b></div><div><span>Заявки на покупку</span><b class="num">до ${P(s.floor * .93)}</b></div></div>
+    <button class="btn primary" id="go">Смотреть лоты</button></div>`);
+  mountChart($('#ch'), key); openSheet();
+  $('#go').onclick = () => { S.market.col = key; closeSheet(); go('market'); };
+}
+function lotSheet(it, ctx) {
+  const v = itemValue(it), st = colStats(it.col);
+  const price = ctx === 'market' ? it.price : (it.listed || v);
+  const act = ctx === 'market' ? (it.mine ? `<button class="btn danger" id="unlist">Снять с продажи</button>`
+      : `<button class="btn primary" id="buy">Купить за ${P(it.price)}</button><button class="btn ghost" id="offer">Предложить обмен</button>`)
+    : '';
+  setBody(`<div class="st"><div class="hero">${giftArt(it, { float: true })}</div>
+    <div class="ttl">${nm(it)} <span class="muted" style="font-weight:600">#${it.num}</span></div>
+    <div class="sub">${ctx === 'market' ? (it.mine ? 'Ваш лот' : 'Продавец · ' + it.seller) : 'Оценка по редкости атрибутов'}</div>
+    <div class="pricebox"><div><div class="pu">${ctx === 'market' ? 'Цена' : 'Оценка'}</div><div class="pv num">${P(ctx === 'market' ? it.price : v)}</div></div>
+      <div style="text-align:right"><div class="pu">Floor коллекции</div><div class="num" style="font-weight:700">${P(st.floor)} ${chgHtml(st.change)}</div></div></div>
+    ${attrsHtml(it)}${act}
+    ${it.slug ? '<button class="btn ghost" id="tgb" style="margin-top:10px">Открыть в Telegram</button>' : ''}
+    <button class="btn ghost" id="colb" style="margin-top:10px">📈 График коллекции</button></div>`);
+  openSheet();
+  $('#colb').onclick = () => colSheet(it.col);
+  if ($('#tgb')) $('#tgb').onclick = () => { const u = 'https://t.me/nft/' + it.slug; try { tg && tg.openTelegramLink ? tg.openTelegramLink(u) : window.open(u, '_blank'); } catch (e) {} };
+  if ($('#buy')) $('#buy').onclick = () => buyFlow(it);
+  if ($('#offer')) $('#offer').onclick = () => swapFlow(it);
+  if ($('#unlist')) $('#unlist').onclick = () => { const mine = S.items.find(i => i.id === it.id); if (mine) { mine.listed = null; S.deals = S.deals.filter(d => !(d.type === 'sell' && d.item.id === mine.id)); } closeSheet(); refresh(); toast('Лот снят с продажи'); };
+}
+function itemSheet(it) {
+  const v = itemValue(it);
+  const note = it.where === 'profile' ? `<div class="warn"><span>ℹ️</span><span>Этот подарок в вашем профиле Telegram. Для продажи или обмена его нужно передать на аккаунт сервиса. Мы подскажем как.</span></div>` : '';
+  let act;
+  if (it.listed) act = `<button class="btn danger" id="unlist">Снять с продажи</button>`;
+  else if (it.locked) act = `<div class="empty" style="margin-top:14px">Подарок участвует в обмене и временно заблокирован.</div>`;
+  else act = `<button class="btn primary" id="sell">Продать</button><button class="btn ghost" id="swap">Обменять</button>${it.where === 'vault' ? '<button class="btn ghost" id="wd">Вывести в профиль Telegram</button>' : ''}`;
+  setBody(`<div class="st"><div class="hero">${giftArt(it, { float: true })}</div><div class="ttl">${nm(it)} <span class="muted" style="font-weight:600">#${it.num}</span></div>
+    <div class="sub">${it.where === 'profile' ? 'В вашем профиле Telegram' : 'Хранится на платформе'}${it.listed ? ' · Продаётся за ' + P(it.listed) : ''}</div>
+    <div class="pricebox"><div><div class="pu">Оценка</div><div class="pv num">${P(v)}</div></div></div>${attrsHtml(it)}${note}${act}</div>`);
+  openSheet();
+  const b = id => $('#' + id);
+  if (b('sell')) b('sell').onclick = () => sellFlow(it);
+  if (b('swap')) b('swap').onclick = () => swapFlow(null, it);
+  if (b('unlist')) b('unlist').onclick = () => { it.listed = null; S.deals = S.deals.filter(d => !(d.type === 'sell' && d.item.id === it.id)); closeSheet(); refresh(); toast('Лот снят с продажи'); };
+  if (b('wd')) b('wd').onclick = () => progressStep({ items: ['Готовим передачу', 'Отправляем подарок', 'Подтверждаем в Telegram'], title: 'Выводим подарок', okTitle: 'Подарок отправлен', okText: `«${nm(it)} #${it.num}» уже в вашем профиле Telegram.`, after: () => { dropItem(it); refresh(); } });
+}
+
+/* ============ Покупка ============ */
+function buyFlow(l) {
+  const after = S.balance - l.price;
+  setBody(`<div class="st"><button class="back" id="back">‹ Назад</button><h2>Покупка</h2>${miniGift(l, 'Продавец · ' + l.seller)}
+    <div class="rows"><div><span>Цена лота</span><b>${P(l.price)}</b></div><div><span>Ваш баланс</span><b>${P(S.balance)}</b></div><div class="big"><span>Останется</span><b ${after < 0 ? 'style="color:var(--down)"' : ''}>${P(after)}</b></div></div>
+    ${after < 0 ? '<div class="err" style="margin-top:8px">Недостаточно средств. Пополните кошелёк.</div>' : ''}
+    <button class="btn primary" id="go" ${after < 0 ? 'disabled' : ''}>Купить за ${P(l.price)}</button>${after < 0 ? '<button class="btn ghost" id="dep">Пополнить кошелёк</button>' : ''}</div>`);
+  $('#back').onclick = () => lotSheet(l, 'market');
+  if ($('#dep')) $('#dep').onclick = depositSheet;
+  $('#go').onclick = () => progressStep({ items: ['Резервируем лот', 'Списываем средства', 'Передаём подарок'], title: 'Оформляем покупку', okTitle: 'Подарок ваш!', okText: `«${nm(l)} #${l.num}» добавлен в «Мои подарки».`,
+    after: () => { S.balance -= l.price; S.lots = S.lots.filter(x => x.id !== l.id);
+      const it = Object.assign({}, l, { id: 'b' + (++S.seq), where: 'vault', listed: null }); delete it.price; delete it.seller; S.items.unshift(it);
+      addHist('buy', 'Покупка · ' + nm(l), -l.price); addDeal('buy', it, 'done', 'Куплено за ' + fmt(l.price) + ' TON'); refresh(); } });
+}
+
+/* ============ Продажа ============ */
+function sellFlow(pre) {
+  const st = { it: pre || null, price: 0 };
+  const pick = () => {
+    const list = freeItems();
+    setBody(`<div class="st"><h2>Продажа</h2><p class="sub">Выберите подарок, который хотите продать</p>${pickGrid(list, { sub: it => it.where === 'profile' ? 'в профиле' : 'на платформе' })}<button class="btn primary" id="go" disabled>Далее</button></div>`);
+    wirePick(list, it => { st.it = it; $('#go').disabled = false; }); $('#go').onclick = price;
+  };
+  const price = () => {
+    const v = itemValue(st.it);
+    setBody(`<div class="st">${pre ? '' : '<button class="back" id="back">‹ Назад</button>'}<h2>Укажите цену</h2>${miniGift(st.it)}
+      <label class="field"><span>Цена, TON</span><input id="pr" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${st.price || ''}"></label>
+      <div class="hint">Рекомендуемая цена ≈ <b>${fmt(v)}</b> TON · floor коллекции ${fmt(colStats(st.it.col).floor)} TON</div>
+      <div class="rows"><div><span>Комиссия сервиса ${Math.round(CFG.fee * 100)}%</span><b id="fee">0,00</b></div><div class="big"><span>Вы получите</span><b id="net">0,00 TON</b></div></div>
+      <button class="btn primary" id="go" disabled>Выставить на продажу</button></div>`);
+    if ($('#back')) $('#back').onclick = pick;
+    const inp = $('#pr'), upd = () => { const p = parse(inp.value) || 0; st.price = p; $('#fee').textContent = fmt(p * CFG.fee) + ' TON'; $('#net').textContent = fmt(p * (1 - CFG.fee)) + ' TON'; $('#go').disabled = !(p > 0); };
+    inp.oninput = upd; upd();
+    $('#go').onclick = () => st.it.where === 'profile' ? transferStep({ item: st.it, onBack: price, onDone: finish }) : finish();
+  };
+  const finish = () => progressStep({ items: st.it.where === 'profile' ? ['Ищем подарок в чате', 'Проверяем подлинность', 'Подарок получен'] : ['Проверяем подарок', 'Создаём лот', 'Публикуем на маркете'],
+    okTitle: 'Выставлено на продажу', okText: `«${nm(st.it)} #${st.it.num}» за ${fmt(st.price)} TON. Деньги придут на баланс после покупки.`,
+    after: () => { st.it.where = 'vault'; st.it.listed = +st.price.toFixed(2); addDeal('sell', st.it, 'active', 'Цена ' + fmt(st.price) + ' TON'); refresh(); } });
+  openSheet(); pre ? price() : pick();
+}
+
+/* ============ Обмен ============ */
+function swapFlow(preLot, preItem) {
+  const st = { it: preItem || null, mode: preLot ? 'gift' : 'gift', want: preLot || null };
+  const pick = () => {
+    const list = freeItems();
+    setBody(`<div class="st"><h2>Обмен</h2><p class="sub">Выберите подарок, который отдаёте</p>${pickGrid(list, { sub: it => it.where === 'profile' ? 'в профиле' : 'на платформе' })}<button class="btn primary" id="go" disabled>Далее</button></div>`);
+    wirePick(list, it => { st.it = it; $('#go').disabled = false; }); $('#go').onclick = () => preLot ? summary() : target();
+  };
+  const target = () => {
+    setBody(`<div class="st"><button class="back" id="back">‹ Назад</button><h2>Что получить взамен?</h2>${miniGift(st.it)}
+      <div class="seg"><i style="width:calc(50% - 4px);transform:translateX(${st.mode === 'gift' ? 0 : 100}%)"></i><button data-m="gift" class="${st.mode === 'gift' ? 'on' : ''}">Подарок</button><button data-m="money" class="${st.mode === 'money' ? 'on' : ''}">Деньги</button></div>
+      <div id="tgt"></div><button class="btn primary" id="go">Далее</button></div>`);
+    $('#back').onclick = preItem ? () => itemSheet(st.it) : pick;
+    const v = itemValue(st.it);
+    const draw = () => {
+      const box = $('#tgt');
+      if (st.mode === 'gift') {
+        const list = S.lots.slice().sort((a, b) => Math.abs(a.price - v) - Math.abs(b.price - v)).slice(0, 12);
+        box.innerHTML = `<p class="sub" style="margin-top:12px">Выберите подарок с маркета. Самые близкие по цене сверху.</p>${pickGrid(list, { sub: it => Pn(it.price) })}`;
+        $('#go').disabled = !st.want;
+        wirePick(list, it => { st.want = it; $('#go').disabled = false; });
+        $$('.pick', box).forEach(el => { if (st.want && String(st.want.id) === el.dataset.id) el.classList.add('sel'); });
+      } else {
+        const get = v * CFG.instantRate;
+        box.innerHTML = `<div class="rows"><div><span>Оценка подарка</span><b>${P(v)}</b></div><div><span>Мгновенный выкуп ${Math.round(CFG.instantRate * 100)}%</span><b>${P(get)}</b></div><div class="big"><span>Вы получите на баланс</span><b>${P(get)}</b></div></div>
+          <p class="hint" style="margin-top:10px">Деньги зачислятся сразу после проверки подарка.</p>`;
+        $('#go').disabled = false;
+      }
+    };
+    $$('.seg button', body).forEach(b => b.onclick = () => { st.mode = b.dataset.m; hap(); $$('.seg button', body).forEach(x => x.classList.toggle('on', x === b)); $('.seg i', body).style.transform = `translateX(${st.mode === 'gift' ? 0 : 100}%)`; draw(); });
+    draw(); $('#go').onclick = summary;
+  };
+  const summary = () => {
+    if (st.mode === 'money') return go2();
+    const v = itemValue(st.it), diff = st.want.price - v, extra = Math.max(0, diff);
+    setBody(`<div class="st"><button class="back" id="back">‹ Назад</button><h2>Предложение обмена</h2>
+      <p class="sub">Вы отдаёте</p>${miniGift(st.it)}<p class="sub" style="margin-top:12px">Вы получаете</p>${miniGift(st.want, 'Продавец · ' + (st.want.seller || ''))}
+      <div class="rows"><div><span>Ваш подарок</span><b>${P(v)}</b></div><div><span>Желаемый подарок</span><b>${P(st.want.price)}</b></div>
+      <div class="big"><span>${diff > 0 ? 'Ваша доплата' : 'Вам доплатят'}</span><b>${P(Math.abs(diff))}</b></div></div>
+      ${extra > S.balance ? '<div class="err" style="margin-top:8px">Не хватает средств на доплату.</div>' : ''}
+      <button class="btn primary" id="go" ${extra > S.balance ? 'disabled' : ''}>Отправить предложение</button></div>`);
+    $('#back').onclick = preLot ? () => lotSheet(preLot, 'market') : target;
+    $('#go').onclick = go2;
+  };
+  const go2 = () => st.it.where === 'profile' ? transferStep({ item: st.it, onBack: () => st.mode === 'money' ? target() : summary(), onDone: finish }) : finish();
+  const finish = () => {
+    const money = st.mode === 'money', get = itemValue(st.it) * CFG.instantRate;
+    progressStep({ items: ['Проверяем подарок', money ? 'Считаем выкуп' : 'Отправляем предложение', money ? 'Начисляем деньги' : 'Резервируем подарок'],
+      okTitle: money ? 'Деньги зачислены' : 'Предложение отправлено', okText: money ? `На баланс добавлено ${fmt(get)} TON.` : `Продавец получил ваше предложение. Мы сообщим об ответе.`,
+      after: () => { st.it.where = 'vault';
+        if (money) { S.balance += get; dropItem(st.it); addHist('swap', 'Обмен на деньги · ' + nm(st.it), get); addDeal('swap', st.it, 'done', 'Выкуп ' + fmt(get) + ' TON'); }
+        else { st.it.locked = true; addDeal('swap', st.it, 'wait', 'Хотите: ' + nm(st.want) + ' #' + st.want.num); }
+        refresh(); } });
+  };
+  openSheet(); preItem ? target() : pick();
+}
+
+/* ============ Кошелёк: пополнение и вывод ============ */
+function depositSheet() {
+  setBody(`<div class="st"><h2>Пополнение</h2><p class="sub">Отправьте TON на адрес сервиса. Баланс обновится после подтверждения сети.</p>
+    <ol class="steps"><li>Скопируйте адрес<br><button class="copy" id="ca">${CFG.depositAddress} <span>⧉</span></button></li>
+    ${CFG.depositMemo ? `<li>Укажите комментарий<br><button class="copy" id="cm">${CFG.depositMemo} <span>⧉</span></button></li>` : ''}
+    <li>Отправьте перевод из своего кошелька</li></ol>
+    <div class="warn"><span>⚠️</span><span>Отправляйте только TON. Сверяйте адрес с тем, что указан в приложении. Перевод на неверный адрес вернуть невозможно.</span></div>
+    <div class="rows"><div><span>Минимальное пополнение</span><b>1 TON</b></div><div><span>Комиссия сервиса</span><b>0%</b></div></div>
+    <button class="btn primary" id="go">Скопировать адрес</button></div>`);
+  openSheet();
+  const cp = t => { try { navigator.clipboard && navigator.clipboard.writeText(t); } catch (e) {} hap('medium'); toast('Скопировано'); };
+  $('#ca').onclick = $('#go').onclick = () => cp(CFG.depositAddress); if ($('#cm')) $('#cm').onclick = () => cp(CFG.depositMemo);
+}
+function withdrawSheet() {
+  setBody(`<div class="st"><h2>Вывод средств</h2><p class="sub">Доступно: <b style="color:#fff">${P(S.balance)}</b></p>
+    <label class="field"><span>Сумма, TON</span><div class="wrap"><input id="am" inputmode="decimal" autocomplete="off" placeholder="0,00"><button class="max" id="max" type="button">МАКС</button></div></label>
+    <label class="field" style="margin-top:6px"><span>Адрес кошелька</span><input id="ad" autocomplete="off" spellcheck="false" placeholder="UQ…" style="font-size:15px"></label>
+    <div class="err" id="err"></div>
+    <div class="rows"><div><span>Сетевая комиссия</span><b>${fmt(CFG.netFee)} TON</b></div><div class="big"><span>Придёт на кошелёк</span><b id="get">0,00 TON</b></div></div>
+    <button class="btn primary" id="go" disabled>Вывести</button></div>`);
+  openSheet();
+  const am = $('#am'), ad = $('#ad'), err = $('#err');
+  const check = () => { const a = parse(am.value) || 0, addr = ad.value.trim(); let m = '';
+    $('#get').textContent = fmt(Math.max(0, a - CFG.netFee)) + ' TON';
+    if (a && a < CFG.minWithdraw) m = `Минимальная сумма — ${fmt(CFG.minWithdraw)} TON`; else if (a > S.balance) m = 'Недостаточно средств на балансе'; else if (addr && addr.length < 20) m = 'Проверьте адрес кошелька';
+    err.textContent = m; $('#go').disabled = !(a >= CFG.minWithdraw && a <= S.balance && addr.length >= 20 && !m); };
+  am.oninput = ad.oninput = check;
+  $('#max').onclick = () => { am.value = String(Math.floor(S.balance * 100) / 100).replace('.', ','); hap(); check(); };
+  $('#go').onclick = () => { const a = parse(am.value); progressStep({ items: ['Проверяем адрес', 'Создаём перевод', 'Отправляем в сеть'], title: 'Оформляем вывод', okTitle: 'Вывод оформлен', okText: `${fmt(a - CFG.netFee)} TON уйдут на ваш кошелёк в ближайшее время.`,
+    after: () => { S.balance -= a; addHist('withdraw', 'Вывод на кошелёк', -a); refresh(); } }); };
+}
+
+/* ============ Поддержка, правила, о сервисе ============ */
+function supportSheet() {
+  const faq = [['Как продать подарок?', 'Нажмите «Продажа», выберите подарок и цену. Если подарок в вашем профиле Telegram, его нужно передать на аккаунт сервиса. После проверки лот появится на маркете.'],
+    ['Сколько стоит сделка?', `Комиссия с продажи — ${Math.round(CFG.fee * 100)}%. Она показывается заранее, до подтверждения. Мгновенный выкуп считается как ${Math.round(CFG.instantRate * 100)}% оценки.`],
+    ['Когда придут деньги?', 'Деньги за продажу зачисляются на баланс сразу после покупки вашего лота. Вывод обрабатывается в порядке очереди.'],
+    ['Подарок не нашли, что делать?', 'Напишите в поддержку и приложите скриншот передачи подарка. Мы разберёмся вручную.']];
+  setBody(`<div class="st"><h2>Поддержка</h2><p class="sub">Частые вопросы. Если ответа нет, напишите оператору.</p>${faq.map(([q, a]) => `<div class="faq"><button>${q}<span>＋</span></button><p>${a}</p></div>`).join('')}
+    <button class="btn primary" id="wr">Написать в поддержку</button></div>`);
+  openSheet(); $$('.faq button', body).forEach(b => b.onclick = () => { b.parentElement.classList.toggle('open'); hap(); });
+  $('#wr').onclick = () => { try { tg && tg.openTelegramLink ? tg.openTelegramLink(CFG.support) : window.open(CFG.support, '_blank'); } catch (e) {} };
+}
+function rulesSheet() {
+  setBody(`<div class="st"><h2>Правила и безопасность</h2><p class="sub">Несколько простых правил защищают ваши подарки и деньги.</p>
+    <ul class="ul"><li>Передавайте подарки только на аккаунт, указанный в разделе сделки внутри приложения.</li><li>Никому не сообщайте код входа Telegram, пароль облака и сид-фразу кошелька.</li>
+    <li>Поддержка никогда не просит передать подарок «для проверки» вне сделки.</li><li>Проверяйте цену и комиссию на экране подтверждения перед каждой сделкой.</li><li>Сомневаетесь — остановитесь и напишите в поддержку.</li></ul>
+    <button class="btn primary" id="ok">Понятно</button></div>`);
+  openSheet(); $('#ok').onclick = closeSheet;
+}
+function aboutSheet() {
+  setBody(`<div class="st"><h2>О сервисе</h2><p class="sub">GiftHub — маркет и обмен коллекционных подарков.</p>
+    <div class="rows"><div><span>Версия</span><b>1.0 ${CFG.demo ? '(демо)' : ''}</b></div><div><span>Комиссия продажи</span><b>${Math.round(CFG.fee * 100)}%</b></div><div><span>Сеть</span><b>TON</b></div></div>
+    <div class="warn" style="margin-top:12px"><span>ℹ️</span><span>Сервис независимый: он не связан с Telegram и не одобрен Telegram. Названия и картинки подарков в демо-версии оригинальные.${CFG.demo ? ' Цены, лоты и графики в демо-версии не настоящие.' : ''}</span></div>
+    <button class="btn ghost" id="ok">Закрыть</button></div>`);
+  openSheet(); $('#ok').onclick = closeSheet;
+}
+
+/* ============ Действия ============ */
+const findItem = id => S.items.find(i => String(i.id) === String(id)), findLot = id => allLots().find(l => String(l.id) === String(id));
+const A = {
+  tab: d => go(d.v), sell: () => sellFlow(), swap: () => swapFlow(), withdraw: withdrawSheet, deposit: depositSheet, support: supportSheet, rules: rulesSheet, about: aboutSheet,
+  lot: d => { const l = findLot(d.id); if (l) lotSheet(l, 'market'); }, item: d => { const i = findItem(d.id); if (i) itemSheet(i); }, col: d => colSheet(d.v),
+  mcol: d => { S.market.col = d.v; render(false); $('.fchips .on') && $('.fchips .on').scrollIntoView({ inline: 'center', block: 'nearest' }); },
+  invf: d => { S.inv = d.v; render(false); }, wf: d => { S.wf = d.v; render(false); },
+  trub: () => { S.rub = !S.rub; render(false); }, thap: () => { S.hap = !S.hap; render(false); }
+};
+document.addEventListener('click', e => { const t = e.target.closest('[data-a]'); if (!t || !A[t.dataset.a]) return; hap('light'); A[t.dataset.a](t.dataset, t); });
+
+/* ============ Запуск ============ */
+if (!CFG.demo) $$('.demo').forEach(x => x.style.display = 'none');
+render();
+const sp = tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param;
+if (sp && /^lot_/.test(sp)) { const l = findLot(sp.slice(4)); if (l) setTimeout(() => lotSheet(l, 'market'), 400); }
+</script>
+</body>
+</html>
