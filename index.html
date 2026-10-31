@@ -294,6 +294,28 @@ button.row{transition:background .2s}button.row:active{background:var(--s2)}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .gart .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;background:inherit}
 .gart::after{z-index:2}
+/* Пополнение и вывод: способы, суммы, карта */
+.meth{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.meth button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.04);border:1.5px solid var(--line);text-align:left;transition:border-color .2s,background .2s}
+.meth button.on{border-color:var(--acc);background:rgba(91,124,255,.1)}
+.meth .mi{width:38px;height:38px;flex:0 0 38px;border-radius:12px;display:grid;place-items:center;background:var(--s3);font-size:18px}
+.meth .sbp{font-size:11px;font-weight:800;letter-spacing:.02em;color:#fff}
+.meth .mt{flex:1;min-width:0}.meth .mt b{display:block;font-size:14.5px;font-weight:650}.meth .mt span{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}
+.meth .rd{position:relative;width:20px;height:20px;flex:0 0 20px;border-radius:50%;border:2px solid var(--line2);transition:border-color .2s}
+.meth button.on .rd{border-color:var(--acc)}.meth button.on .rd::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--acc)}
+.amts{display:flex;gap:8px;flex-wrap:wrap}
+.amts button{padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid var(--line);font-size:13px;font-weight:650;color:#d3d9f5;transition:transform .15s,background .2s}
+.amts button:active{transform:scale(.95)}
+.cardbox{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(91,124,255,.16),rgba(138,92,255,.12));border:1px solid rgba(138,150,255,.3)}
+.cardbox .cc{display:flex;align-items:center;gap:12px;min-width:0}
+.cardbox .cc b{display:block;font-size:16px;letter-spacing:.06em}.cardbox .cc span{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.cb{font-style:normal;font-size:11.5px;font-weight:800;padding:6px 9px;border-radius:9px;background:rgba(255,255,255,.12);color:#fff;white-space:nowrap}
+.cact{display:flex;gap:6px;flex:0 0 auto}.cact button{padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.08);font-size:12.5px;font-weight:650;color:#d3d9f5}
+.cact button:last-child{color:#ff8a9c}
+.cbr{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-style:normal;font-size:12px;font-weight:800;color:var(--cyan);pointer-events:none}
+#cn{letter-spacing:.05em;padding-right:104px}
+.note{font-size:12px;color:var(--muted);line-height:1.45;margin:10px 2px 0}
+.bigic{font-size:52px;margin:6px 0 10px}
 </style>
 </head>
 <body>
@@ -424,6 +446,8 @@ const CFG = {
   minWithdraw: 1, netFee: 0.05,        // вывод: минимум и сетевая комиссия, TON
   escrow: '',                          // @username бота, которому передают подарки (впишите позже, например '@my_gift_bot')
   support: 'https://t.me/your_support_bot',
+  payments: false,                     // true — когда подключена платёжная система (СБП, карты); пока false: пополнение и вывод показывают «Скоро»
+  minDepositRub: 100,                  // минимальное пополнение, ₽
   depositAddress: 'UQ_ВСТАВЬТЕ_АДРЕС_КОШЕЛЬКА_СЕРВИСА',
   depositMemo: ''                      // комментарий к пополнению (если нужен)
 };
@@ -442,7 +466,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const fmt = n => Number(n).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const parse = v => parseFloat(String(v).replace(',', '.').replace(/[^0-9.]/g, ''));
-const S = { tab: 'home', balance: 0, rub: false, hap: true, market: { q: '', col: 'all', sort: 'new' }, inv: 'all', wf: 'all', items: [], lots: [], deals: [], history: [], shown: 0, seq: 100 };
+const S = { tab: 'home', balance: 0, rub: false, hap: true, card: null, depM: 'sbp', wdM: 'card', market: { q: '', col: 'all', sort: 'new' }, inv: 'all', wf: 'all', items: [], lots: [], deals: [], history: [], shown: 0, seq: 100 };
 const rub = n => Math.round(n * CFG.rubPerTon).toLocaleString('ru-RU') + ' ₽';
 const P = n => S.rub ? rub(n) : fmt(n) + ' TON';
 const Pn = n => S.rub ? rub(n) : fmt(n);
@@ -881,43 +905,158 @@ function swapFlow(preLot, preItem) {
 }
 
 /* ============ Кошелёк: пополнение и вывод ============ */
+// Карта: на устройстве хранится только тип и последние 4 цифры, полный номер не сохраняется
+const LS = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const BRANDS = ['МИР', 'Visa', 'Mastercard', 'UnionPay', 'Maestro'];
+(() => { const c = LS.get('gh_card'); if (c && /^\d{4}$/.test(c.last4) && (c.brand === '' || BRANDS.includes(c.brand))) S.card = { brand: c.brand, last4: c.last4 }; })();
+const cardBrand = d => /^220[0-4]/.test(d) ? 'МИР' : /^4/.test(d) ? 'Visa' : /^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d\d|27[01]\d|2720)/.test(d) ? 'Mastercard' : /^62/.test(d) ? 'UnionPay' : /^(50|5[6-9]|6)/.test(d) ? 'Maestro' : '';
+const luhn = s => { let sum = 0, alt = false; for (let i = s.length - 1; i >= 0; i--) { let n = +s[i]; if (alt) { n *= 2; if (n > 9) n -= 9; } sum += n; alt = !alt; } return sum % 10 === 0; };
+const cardOk = d => d.length >= 16 && d.length <= 19 && luhn(d);
+const cardLabel = c => (c.brand || 'Карта') + ' •••• ' + c.last4;
+
+// Блок «карта»: показывает сохранённую карту или поле для ввода номера
+function mountCard(el, onChange) {
+  let edit = false;
+  const draw = () => {
+    if (S.card && !edit) {
+      el.innerHTML = `<div class="cardbox"><div class="cc"><i class="cb">${S.card.brand || '💳'}</i><div><b>•••• ${S.card.last4}</b><span>Сохранена</span></div></div>
+        <div class="cact"><button type="button" id="cedit">Изменить</button><button type="button" id="cdel">Удалить</button></div></div>`;
+      $('#cedit', el).onclick = () => { edit = true; hap(); draw(); };
+      $('#cdel', el).onclick = () => { S.card = null; LS.set('gh_card', null); hap(); toast('Карта удалена'); draw(); };
+    } else {
+      el.innerHTML = `<label class="field" style="margin:12px 0 4px"><span>Номер карты</span><div class="wrap"><input id="cn" inputmode="numeric" autocomplete="cc-number" spellcheck="false" placeholder="0000 0000 0000 0000" maxlength="23"><i class="cbr" id="cbr"></i></div></label>
+        <div class="err" id="cerr"></div>
+        <div ${S.card ? 'class="twoc" style="margin-top:4px"' : ''}><button class="btn primary sm" id="csave" type="button" disabled>Сохранить карту</button>${S.card ? '<button class="btn ghost sm" id="ccancel" type="button">Отмена</button>' : ''}</div>
+        <p class="note">Сохраняем только тип карты и последние 4 цифры. CVC и срок действия не нужны.</p>`;
+      const cn = $('#cn', el), sv = $('#csave', el), er = $('#cerr', el), br = $('#cbr', el);
+      cn.oninput = () => {
+        const before = cn.value.slice(0, cn.selectionStart).replace(/\D/g, '').length;
+        const d = cn.value.replace(/\D/g, '').slice(0, 19), f = d.replace(/(\d{4})(?=\d)/g, '$1 ');
+        cn.value = f;
+        let pos = 0, seen = 0; while (pos < f.length && seen < before) { if (/\d/.test(f[pos])) seen++; pos++; }
+        try { cn.setSelectionRange(pos, pos); } catch (e) {}
+        br.textContent = cardBrand(d);
+        const ok = cardOk(d); er.textContent = d.length >= 16 && !ok ? 'Проверьте номер карты' : ''; sv.disabled = !ok;
+      };
+      sv.onclick = () => {
+        const d = cn.value.replace(/\D/g, ''); if (!cardOk(d)) return;
+        S.card = { brand: cardBrand(d), last4: d.slice(-4) }; LS.set('gh_card', S.card);
+        cn.value = ''; // полный номер дальше не держим
+        // TODO(сервер): когда появится бэкенд, отправлять полный номер на сервер по HTTPS, локально оставлять только маску
+        edit = false; hap('success'); toast('Карта сохранена'); draw();
+      };
+      if ($('#ccancel', el)) $('#ccancel', el).onclick = () => { edit = false; hap(); draw(); };
+    }
+    onChange && onChange();
+  };
+  draw();
+}
+
+// Платёжная система ещё не подключена: честно говорим «скоро», ничего не списываем
+function comingSoon(what) {
+  setBody(`<div class="st center"><div class="bigic">⏳</div><h2>Скоро</h2><p class="sub">${what} пока недоступно: платёжная система ещё подключается. Деньги не списаны. Эта возможность появится позже.</p><button class="btn primary" id="ok">Понятно</button></div>`);
+  $('#ok').onclick = closeSheet; hap('warning');
+}
+
 function depositSheet() {
-  if (/ВСТАВЬТЕ/.test(CFG.depositAddress)) { setBody(`<div class="st"><h2>Пополнение</h2><p class="sub">Приём платежей пока не подключён. Пополнение баланса станет доступно позже.</p><button class="btn primary" id="go">Понятно</button></div>`); openSheet(); $('#go').onclick = closeSheet; return; }
-  setBody(`<div class="st"><h2>Пополнение</h2><p class="sub">Отправьте TON на адрес сервиса. Баланс обновится после подтверждения сети.</p>
+  const tonOn = !/ВСТАВЬТЕ/.test(CFG.depositAddress), st = { m: S.depM === 'card' ? 'card' : 'sbp' };
+  const quick = [500, 1000, 3000, 10000];
+  setBody(`<div class="st"><h2>Пополнение</h2><p class="sub">Выберите сумму и способ оплаты.</p>
+    <label class="field"><span>Сумма, ₽</span><input id="am" inputmode="numeric" autocomplete="off" placeholder="1 000"></label>
+    <div class="amts">${quick.map(v => `<button type="button" data-v="${v}">${v.toLocaleString('ru-RU')} ₽</button>`).join('')}</div>
+    <div class="err" id="err"></div>
+    <div class="meth" id="meth"></div><div id="cardbox"></div>
+    <div class="rows"><div><span>Зачислится на баланс</span><b id="get">≈ 0,00 TON</b></div><div><span>Курс</span><b>1 TON ≈ ${fmt(CFG.rubPerTon)} ₽</b></div></div>
+    <button class="btn primary" id="go" disabled>Пополнить</button></div>`);
+  openSheet();
+  const am = $('#am'), err = $('#err'), go = $('#go'), cardEl = $('#cardbox');
+  const check = () => {
+    const a = parse(am.value) || 0;
+    $('#get').textContent = '≈ ' + fmt(a / CFG.rubPerTon) + ' TON';
+    err.textContent = am.value && a < CFG.minDepositRub ? `Минимальная сумма — ${CFG.minDepositRub.toLocaleString('ru-RU')} ₽` : '';
+    go.disabled = !(a >= CFG.minDepositRub) || (st.m === 'card' && !S.card);
+    go.textContent = a >= CFG.minDepositRub ? `Пополнить на ${Math.floor(a).toLocaleString('ru-RU')} ₽` : 'Пополнить';
+  };
+  const methods = () => [['sbp', '<span class="sbp">СБП</span>', 'СБП', 'Перевод через приложение вашего банка'],
+    ['card', '💳', 'Банковская карта', S.card ? cardLabel(S.card) : 'Добавьте карту для оплаты'],
+    ...(tonOn ? [['ton', '💎', 'TON-кошелёк', 'Перевод криптовалютой на адрес сервиса']] : [])];
+  const drawMeth = () => {
+    $('#meth').innerHTML = methods().map(([k, ic, t, s]) => `<button type="button" data-m="${k}" class="${st.m === k ? 'on' : ''}"><div class="mi">${ic}</div><div class="mt"><b>${t}</b><span>${s}</span></div><i class="rd"></i></button>`).join('');
+    $$('#meth button').forEach(b => b.onclick = () => { hap(); if (b.dataset.m === 'ton') return tonDepositSheet(); st.m = b.dataset.m; S.depM = st.m; pick(); });
+  };
+  const pick = () => { drawMeth(); if (st.m === 'card') mountCard(cardEl, () => { drawMeth(); check(); }); else cardEl.innerHTML = ''; check(); };
+  $$('.amts button').forEach(b => b.onclick = () => { am.value = b.dataset.v; hap(); check(); });
+  am.oninput = check;
+  go.onclick = () => {
+    hap('medium');
+    // TODO: когда подключите платёжную систему (CFG.payments = true) — создать платёж и открыть страницу оплаты СБП/карты
+    comingSoon(st.m === 'sbp' ? 'Пополнение через СБП' : 'Пополнение картой');
+  };
+  pick();
+}
+function tonDepositSheet() {
+  setBody(`<div class="st"><button class="back" id="back">‹ Назад</button><h2>Пополнение TON</h2><p class="sub">Отправьте TON на адрес сервиса. Баланс обновится после подтверждения сети.</p>
     <ol class="steps"><li>Скопируйте адрес<br><button class="copy" id="ca">${CFG.depositAddress} <span>⧉</span></button></li>
     ${CFG.depositMemo ? `<li>Укажите комментарий<br><button class="copy" id="cm">${CFG.depositMemo} <span>⧉</span></button></li>` : ''}
     <li>Отправьте перевод из своего кошелька</li></ol>
     <div class="warn"><span>⚠️</span><span>Отправляйте только TON. Сверяйте адрес с тем, что указан в приложении. Перевод на неверный адрес вернуть невозможно.</span></div>
     <div class="rows"><div><span>Минимальное пополнение</span><b>1 TON</b></div><div><span>Комиссия сервиса</span><b>0%</b></div></div>
     <button class="btn primary" id="go">Скопировать адрес</button></div>`);
-  openSheet();
+  $('#back').onclick = depositSheet;
   const cp = t => { try { navigator.clipboard && navigator.clipboard.writeText(t); } catch (e) {} hap('medium'); toast('Скопировано'); };
   $('#ca').onclick = $('#go').onclick = () => cp(CFG.depositAddress); if ($('#cm')) $('#cm').onclick = () => cp(CFG.depositMemo);
 }
 function withdrawSheet() {
+  const st = { m: S.wdM === 'wallet' ? 'wallet' : 'card' };
   setBody(`<div class="st"><h2>Вывод средств</h2><p class="sub">Доступно: <b style="color:#fff">${P(S.balance)}</b></p>
+    <div class="seg" id="wseg" style="margin:12px 0 2px"><i style="width:calc(50% - 4px)"></i><button type="button" data-m="card">На карту</button><button type="button" data-m="wallet">На TON-кошелёк</button></div>
     <label class="field"><span>Сумма, TON</span><div class="wrap"><input id="am" inputmode="decimal" autocomplete="off" placeholder="0,00"><button class="max" id="max" type="button">МАКС</button></div></label>
-    <label class="field" style="margin-top:6px"><span>Адрес кошелька</span><input id="ad" autocomplete="off" spellcheck="false" placeholder="UQ…" style="font-size:15px"></label>
-    <div class="err" id="err"></div>
-    <div class="rows"><div><span>Сетевая комиссия</span><b>${fmt(CFG.netFee)} TON</b></div><div class="big"><span>Придёт на кошелёк</span><b id="get">0,00 TON</b></div></div>
+    <div id="dest"></div><div class="err" id="err"></div><div class="rows" id="wrows"></div>
     <button class="btn primary" id="go" disabled>Вывести</button></div>`);
   openSheet();
-  const am = $('#am'), ad = $('#ad'), err = $('#err');
-  const check = () => { const a = parse(am.value) || 0, addr = ad.value.trim(); let m = '';
-    $('#get').textContent = fmt(Math.max(0, a - CFG.netFee)) + ' TON';
-    if (a && a < CFG.minWithdraw) m = `Минимальная сумма — ${fmt(CFG.minWithdraw)} TON`; else if (a > S.balance) m = 'Недостаточно средств на балансе'; else if (addr && addr.length < 20) m = 'Проверьте адрес кошелька';
-    err.textContent = m; $('#go').disabled = !(a >= CFG.minWithdraw && a <= S.balance && addr.length >= 20 && !m); };
-  am.oninput = ad.oninput = check;
+  const am = $('#am'), err = $('#err'), go = $('#go'), dest = $('#dest');
+  const check = () => {
+    const a = parse(am.value) || 0, ad = $('#ad'), addr = ad ? ad.value.trim() : '';
+    $('#get').textContent = st.m === 'card' ? '≈ ' + Math.round(a * CFG.rubPerTon).toLocaleString('ru-RU') + ' ₽' : fmt(Math.max(0, a - CFG.netFee)) + ' TON';
+    let m = '';
+    if (a && a < CFG.minWithdraw) m = `Минимальная сумма — ${fmt(CFG.minWithdraw)} TON`; else if (a > S.balance) m = 'Недостаточно средств на балансе'; else if (st.m === 'wallet' && addr && addr.length < 20) m = 'Проверьте адрес кошелька';
+    err.textContent = m;
+    go.disabled = !(a >= CFG.minWithdraw && a <= S.balance && !m && (st.m === 'card' ? !!S.card : addr.length >= 20));
+  };
+  const setM = m => {
+    st.m = m; S.wdM = m;
+    $$('#wseg button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); $('#wseg i').style.transform = `translateX(${m === 'card' ? 0 : 100}%)`;
+    go.textContent = m === 'card' ? 'Вывести на карту' : 'Вывести на кошелёк';
+    if (m === 'card') {
+      $('#wrows').innerHTML = `<div><span>Курс</span><b>1 TON ≈ ${fmt(CFG.rubPerTon)} ₽</b></div><div class="big"><span>Придёт на карту</span><b id="get">≈ 0 ₽</b></div>`;
+      mountCard(dest, check);
+    } else {
+      dest.innerHTML = `<label class="field" style="margin-top:6px"><span>Адрес кошелька</span><input id="ad" autocomplete="off" spellcheck="false" placeholder="UQ…" style="font-size:15px"></label>`;
+      $('#wrows').innerHTML = `<div><span>Сетевая комиссия</span><b>${fmt(CFG.netFee)} TON</b></div><div class="big"><span>Придёт на кошелёк</span><b id="get">0,00 TON</b></div>`;
+      $('#ad').oninput = check;
+    }
+    check();
+  };
+  $$('#wseg button').forEach(b => b.onclick = () => { if (b.dataset.m !== st.m) { hap(); setM(b.dataset.m); } });
+  am.oninput = check;
   $('#max').onclick = () => { am.value = String(Math.floor(S.balance * 100) / 100).replace('.', ','); hap(); check(); };
-  $('#go').onclick = () => { const a = parse(am.value); progressStep({ items: ['Проверяем адрес', 'Создаём перевод', 'Отправляем в сеть'], title: 'Оформляем вывод', okTitle: 'Вывод оформлен', okText: `${fmt(a - CFG.netFee)} TON уйдут на ваш кошелёк в ближайшее время.`,
-    after: () => { S.balance -= a; addHist('withdraw', 'Вывод на кошелёк', -a); refresh(); } }); };
+  go.onclick = () => {
+    const card = st.m === 'card';
+    if (!CFG.payments) return comingSoon(card ? 'Вывод на карту' : 'Вывод на кошелёк');
+    const a = parse(am.value), dst = card ? cardLabel(S.card) : '';
+    progressStep({ items: card ? ['Проверяем карту', 'Создаём выплату', 'Отправляем в банк'] : ['Проверяем адрес', 'Создаём перевод', 'Отправляем в сеть'], title: 'Оформляем вывод', okTitle: 'Вывод оформлен',
+      okText: card ? `≈ ${Math.round(a * CFG.rubPerTon).toLocaleString('ru-RU')} ₽ уйдут на карту ${dst} в ближайшее время.` : `${fmt(a - CFG.netFee)} TON уйдут на ваш кошелёк в ближайшее время.`,
+      after: () => { S.balance -= a; addHist('withdraw', card ? 'Вывод на карту · ' + dst : 'Вывод на кошелёк', -a); refresh(); } });
+  };
+  setM(st.m);
 }
 
 /* ============ Поддержка, правила, о сервисе ============ */
 function supportSheet() {
   const faq = [['Как продать подарок?', 'Нажмите «Продажа». Если подарков в приложении ещё нет, передайте подарок боту сервиса: после проверки он появится в «Мои подарки», и вы сможете выбрать цену и выставить его на маркет.'],
     ['Сколько стоит сделка?', `Комиссия с продажи — ${Math.round(CFG.fee * 100)}%. Она показывается заранее, до подтверждения. Мгновенный выкуп считается как ${Math.round(CFG.instantRate * 100)}% оценки.`],
-    ['Когда придут деньги?', 'Деньги за продажу зачисляются на баланс сразу после покупки вашего лота. Вывод обрабатывается в порядке очереди.'],
+    ['Как пополнить баланс и вывести деньги?', 'В разделе «Кошелёк» нажмите «Пополнить» и выберите СБП или банковскую карту. Для вывода укажите сумму и карту: номер сохраняется в приложении в сокращённом виде. Приём платежей ещё подключается, поэтому пока эти операции недоступны.'],
+    ['Когда придут деньги?', 'Деньги за продажу зачисляются на баланс сразу после покупки вашего лота. Вывод на карту или TON-кошелёк обрабатывается в порядке очереди.'],
     ['Подарок не нашли, что делать?', 'Напишите в поддержку и приложите скриншот передачи подарка. Мы разберёмся вручную.']];
   setBody(`<div class="st"><h2>Поддержка</h2><p class="sub">Частые вопросы. Если ответа нет, напишите оператору.</p>${faq.map(([q, a]) => `<div class="faq"><button>${q}<span>＋</span></button><p>${a}</p></div>`).join('')}
     ${/your_/.test(CFG.support) ? '' : '<button class="btn primary" id="wr">Написать в поддержку</button>'}</div>`);
