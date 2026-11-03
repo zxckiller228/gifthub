@@ -397,28 +397,31 @@ const COL = Object.fromEntries(COLS.map(c => [c.key, c]));
 /* Подарки, прочитанные с экрана и сверенные с публичными страницами t.me/nft/…
    rub — оценка Telegram («Ценность»), price — примерная цена в TON для маркета, left — «Количество» */
 const GIFTS = [
-  { id: 'g1', col: 'flame', num: 115116, model: 'Druid Flame', mr: 3, pat: 'Star', pr: 0.4, bd: 'Grape', br: 1.5, left: 448315, rub: 821, price: 6.9, seller: 'GiftHub', slug: 'ChillFlame-115116',
-    img: 'https://cdn4.telesco.pe/file/GlxZnP-CmPCQmj23iYYQNDPcHOjjbJ1vnJpZbBI09N0jZOOcclYiZ2uToh7oGI8tiDgHKnbYU23PHYsURZsl0CkQc-UwGnYCFyqoOW0TMhd0CswoVXLiVmgrlkNvN-THitkvaW8EGQ7l2p2nyqlyLp4kMn37KTp5qoJxPG8Wi4_H1oLEjEttdbDRH640AzMJWSrOmO_MHFP5QQyBggJDN_6wxeJbIoXpFYOX3R8dDSqYKMkEdI9VtBHOZWWYDdasgt2qVNk5qwDettcviss9xhgbp6Qp1rq1Du-Klj9NW8wjjkneKVsBr-XuuOJ_Ppcs5RaF7bFVNzIGnIgf3Sibcg.jpg' },
-  { id: 'g2', col: 'figure', num: 233591, model: 'Carrara', mr: 3, pat: 'Lily', pr: 0.5, bd: 'Midnight Blue', br: 1.2, left: 268851, rub: 3206, price: 26.5, seller: 'GiftHub', slug: 'LibertyFigure-233591',
-    img: 'https://cdn4.telesco.pe/file/W3lWTw8I6uIOXy0KndWZH4qe5JngcboSySfMfPSn-iAYZwW18Y44YY9ECXNANepVcNCVt1QKjUP2xiGn4PFpbhuOc1ijk1yRFPv3chvRwkkH_WpQCatcgdVImBbI2ArMNgZn3NYs27bS7me5-lxPv3zN2wEQelPU7eHwZdPv0dB-mGOstj2ZDjw5pG5SW09Z8IdNS4T3jGCwhi-VVJBd30s-SoRsCa0UkzaiElp-MancTtfWgGaG9P8DUYeWKiugRIiUSLm3IupFi0S6AGJDKNakLaN-MFoiyz_ipT4bljQHU0vuXU-QTLd_cjNAlBilQidaKE69mtYeZafyPLE0eA.jpg' },
-  { id: 'g3', col: 'heart', num: 78622, model: 'Baking Hot', mr: 0.5, pat: 'Cobra', pr: 0.2, bd: 'Roman Silver', br: 1.5, left: 200676, rub: 1192, price: 10.4, seller: 'GiftHub', slug: 'CookieHeart-78622',
-    img: 'https://cdn4.telesco.pe/file/kWdqgow03loxsf5jjRydUhMNRmk6YDajACAgvYLmv0PKLV1JQfWMJQ7wk_O2LdC9oO4YOl0-4RlDR3s-LzoGS-hHNRObkv0A8a9ptH_A-NFtr8j63J5efFiXUULLORlHsh4KC9XdWNkexJhlDIu2H1Oa5dHf9Q8cVXx-BBSWYIdTYnFLUtw9Kl6vHPeiME979RtDdPKqsnaP_hpeukWnFd6ZIOmGPcrjlZVRYk-Az7-OzT6WYC_CVGdR91ksJmXzlaK9pvVjvSXPk37531o8x_nX6PtAOCjlbD1ImA4kuGPYDjtZHMqxwnAAwwXUnn8BgdtJvzDrC2-cxDCIiduuGA.jpg' },
-  { id: 'g4', col: 'ginger', num: 150351, model: 'Pink Molasses', mr: 1.2, pat: 'Star', pr: 1.8, bd: 'Desert Sand', br: 1, left: 152005, rub: 955, price: 7.9, seller: 'GiftHub', slug: 'GingerCookie-150351',
-    img: 'https://cdn4.telesco.pe/file/WaumRFFutP5QsRdE8WiDLV0-3zzrynJU2jSlKTWwJ2wqJlT-_IIqWp4UMndb270sGHCu4d4EhJzSjw5TxIKguStcSlpaodbJsXlzpF0TeVDrOmYGCn_pIguyuiwG9Hceuzsk-xKfhOL4PO1tQf-sPcQYeGhUcYFjDNJvG6ZQIVUlpD4VNMglrEUuLlQ0KerJvbtXSiXKHkUOdkvKTmEwy9X-wfOZBXoRGCiYh72YuirDBwdeZsnfKW3322Tededtr1XSNBEssAoIw8QbUt656j6enCkBE9Dr-83o_35aoUB5IGmRa7ftUAjMkUsrTqR6fhXaSKBwJ1h_vZ6aJLLOow.jpg' },
-  { id: 'g5', col: 'ginger', num: 35824, model: 'Mr. Biscuit', mr: 1.7, pat: 'Shield', pr: 0.4, bd: 'Orange', br: 1.5, left: 152005, rub: 955, price: 9.2, seller: 'GiftHub', slug: 'GingerCookie-35824',
-    img: 'https://cdn5.telesco.pe/file/b-vCahuXlsCOLA5tR14YHVWBYSi_0u9RsEZDqVOpUbiYgTsQb6i0hvnqRlbxeu-tiaeNQzUeEwvRmhO0rh6ZalLp5cqAzSTO6Ipl2FjblEOKYPsOdMsOwO9_yIwfX1qrF37aE2qUgDbavbXER-5XpLJbCBsDqN2W_5x0ZFGCk3uwTCbfbJ7mGLCQXMEKmvweiMhGxGdpJ7WVvvsEtYyK15OFQfP49pRclzBouxiHerLUD-Cm156cbvl4L9yuYLiPB-XPQm56gv-AKTki38cDumbUtYFd9ONyLrTn-mUOLXJ8f_fGypFJoLpy3xiHPMC295QWI13jt0_H99NRdd0QHg.jpg' },
-  { id: 'g6', col: 'cigar', num: 12316, model: 'Green Goblin', mr: 2, pat: 'Oak Leaf', pr: 0.2, bd: 'Copper', br: 1.5, left: 26849, rub: 5250, price: 44.5, seller: 'GiftHub', slug: 'VintageCigar-12316',
-    img: 'https://cdn4.telesco.pe/file/C0Z8RjcBWgHPn1CBOL5w7OBnOcaaTRF4xceX6y3V9Ge3yMhpOJxlBE5Z4pmxSR1-CPqjpDyQYaZze4_b9OAQJGhpBmisYNc4-UWDCexBzCro2PiXMGTaXHXyezhYEI3EMV4YEdWy_5ZOaAyZdyrUsvbhG8eOpNGTFVBI6BT8NC1DNQBBow6FaUOxSCxKm794SHcSjh1OjmVeCxfU2muJ2xHZ_kf7yJna6isFhdTz_bw34tgWrPhx1gi0lUmFpLci5BTUl0kQ4Cp2FhlmnEcmT7Xvgx61MR78RPF4Y4K6GZEahNer0imDmwJRXG1GBQFBx5l5njSUVCykkhiOoxW3aw.jpg' }
+  { id: 'g1', col: 'flame', num: 115116, model: 'Druid Flame', mr: 3, pat: 'Star', pr: 0.4, bd: 'Grape', br: 1.5, left: 448315, rub: 821, price: 6.9, seller: 'GiftHub', slug: 'ChillFlame-115116' },
+  { id: 'g2', col: 'figure', num: 233591, model: 'Carrara', mr: 3, pat: 'Lily', pr: 0.5, bd: 'Midnight Blue', br: 1.2, left: 268851, rub: 3206, price: 26.5, seller: 'GiftHub', slug: 'LibertyFigure-233591' },
+  { id: 'g3', col: 'heart', num: 78622, model: 'Baking Hot', mr: 0.5, pat: 'Cobra', pr: 0.2, bd: 'Roman Silver', br: 1.5, left: 200676, rub: 1192, price: 10.4, seller: 'GiftHub', slug: 'CookieHeart-78622' },
+  { id: 'g4', col: 'ginger', num: 150351, model: 'Pink Molasses', mr: 1.2, pat: 'Star', pr: 1.8, bd: 'Desert Sand', br: 1, left: 152005, rub: 955, price: 7.9, seller: 'GiftHub', slug: 'GingerCookie-150351' },
+  { id: 'g5', col: 'ginger', num: 35824, model: 'Mr. Biscuit', mr: 1.7, pat: 'Shield', pr: 0.4, bd: 'Orange', br: 1.5, left: 152005, rub: 955, price: 9.2, seller: 'GiftHub', slug: 'GingerCookie-35824' },
+  { id: 'g6', col: 'cigar', num: 12316, model: 'Green Goblin', mr: 2, pat: 'Oak Leaf', pr: 0.2, bd: 'Copper', br: 1.5, left: 26849, rub: 5250, price: 44.5, seller: 'GiftHub', slug: 'VintageCigar-12316' }
 ];
 const itemValue = it => +(it.rub / RUB_PER_TON).toFixed(2); // оценка Telegram в TON
 const colFloor = key => Math.min(...GIFTS.filter(g => g.col === key).map(g => g.price));
+
+/* Картинки подарков: постоянные адреса Fragment (nft.fragment.com), собираются из названия и номера подарка.
+   Ссылки cdn.telesco.pe из страницы t.me/nft/… со временем протухают (404), поэтому их мы не храним.
+   Сначала лёгкая версия 320x320, при сбое большая webp, при втором сбое остаётся запасной рисунок. */
+const giftImgUrl = slug => 'https://nft.fragment.com/gift/' + String(slug).toLowerCase() + '.medium.jpg';
+function giftImgFail(el) {
+  if (!el.dataset.retry) { el.dataset.retry = '1'; el.src = 'https://nft.fragment.com/gift/' + String(el.dataset.slug).toLowerCase() + '.webp'; }
+  else el.remove();
+}
 
 /* Карточка подарка: фон и узор как в Telegram + картинка из Telegram (если загрузилась), иначе запасной рисунок */
 function giftArt(it, { float = false } = {}) {
   const bd = BD[it.bd] || BD.Grape, sy = SYM[it.pat] || SYM.Star, pid = uid();
   const pat = `<svg class="pat" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><pattern id="${pid}" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">
 <g transform="translate(3 3) scale(.62)" fill="#fff">${sy}</g><g transform="translate(15 15) scale(.4)" fill="#fff" opacity=".6">${sy}</g></pattern></defs><rect width="100" height="100" fill="url(#${pid})"/></svg>`;
-  const photo = it.img ? `<img class="photo" src="${it.img}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+  const photo = it.slug ? `<img class="photo" src="${giftImgUrl(it.slug)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="giftImgFail(this)" data-slug="${it.slug}">` : '';
   return `<div class="gart${float ? ' float' : ''}" style="--b1:${bd.c[0]};--b2:${bd.c[1]}">${pat}<svg class="fig" viewBox="0 0 100 100" aria-hidden="true">${DRAW[COL[it.col].draw](PAL[it.model] || PAL['Druid Flame'])}</svg>${photo}</div>`;
 }
 
